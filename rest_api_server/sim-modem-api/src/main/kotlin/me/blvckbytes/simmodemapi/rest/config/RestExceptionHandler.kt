@@ -12,6 +12,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.annotation.ControllerAdvice
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.context.request.WebRequest
+import org.springframework.web.context.request.async.AsyncRequestTimeoutException
 import org.springframework.web.multipart.MultipartException
 import org.springframework.web.multipart.support.MissingServletRequestPartException
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler
@@ -20,7 +21,17 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 @ControllerAdvice
 class RestExceptionHandler : ResponseEntityExceptionHandler() {
 
-  // TODO: Add request timed out handler
+  override fun handleAsyncRequestTimeoutException(
+    ex: AsyncRequestTimeoutException,
+    headers: HttpHeaders,
+    status: HttpStatusCode,
+    request: WebRequest
+  ): ResponseEntity<Any>? {
+    return ApiError(
+      HttpStatus.SERVICE_UNAVAILABLE,
+      "The request could not be served within the timeout period and had to be abandoned"
+    ).toResponseEntity()
+  }
 
   override fun handleMethodArgumentNotValid(
     exception: MethodArgumentNotValidException,
