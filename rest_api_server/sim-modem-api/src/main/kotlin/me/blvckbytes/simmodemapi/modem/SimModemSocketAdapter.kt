@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
 import java.net.Socket
+import java.net.SocketException
 import java.net.SocketTimeoutException
 import java.time.LocalDateTime
 import java.util.concurrent.ConcurrentLinkedQueue
@@ -24,6 +25,7 @@ class SimModemSocketAdapter(
 
   companion object {
     private const val READ_BUFFER_SIZE = 1024;
+    private const val NUMBER_OF_RECONNECT_TRIALS = 3;
   }
 
   private var socket: Socket? = null
@@ -47,16 +49,17 @@ class SimModemSocketAdapter(
       while (true) {
         val millis = System.currentTimeMillis()
 
-        if (socket == null || millis - lastHeartbeatSend < socketServerHeartbeatPeriodMs) {
+        if (millis - lastHeartbeatSend < socketServerHeartbeatPeriodMs) {
           Thread.sleep(socketServerHeartbeatPeriodMs / 2)
           continue
         }
 
-        val outputStream = socket!!.getOutputStream()
-        outputStream.write(sentinelBytes)
-        outputStream.flush()
-
-        lastHeartbeatSend = millis
+        ensureAvailabilityAndExecute({}) { availableSocket ->
+          val outputStream = availableSocket.getOutputStream()
+          outputStream.write(sentinelBytes)
+          outputStream.flush()
+          lastHeartbeatSend = millis
+        }
       }
     }
   }
@@ -103,20 +106,40 @@ class SimModemSocketAdapter(
     resultHandler.handle(ExecutionResult.SUCCESS, responses)
   }
 
-  private fun<T> ensureAvailabilityAndExecute(unavailabilityReturnSupplier: () -> T, executor: (availableSocket: Socket) -> T): T {
-    try {
-      // TODO: Not only check for null, but also for availability
-      if (socket == null) {
-        socket = Socket(socketServerHost, socketServerPort)
-        logger.info("Connected to socket server on ${socketServerHost}:${socketServerPort}")
-        lastHeartbeatSend = 0
-      }
+  private fun createConnection(): Boolean {
+    if (socket != null)
+      socket!!.close()
+
+    return try {
+      socket = Socket(socketServerHost, socketServerPort)
+      logger.info("Connected to socket server on ${socketServerHost}:${socketServerPort}")
+      lastHeartbeatSend = 0
+      true;
     } catch (exception: java.lang.Exception) {
       logger.error("Could not connect to socket server on ${socketServerHost}:${socketServerPort}", exception)
-      return unavailabilityReturnSupplier()
+      false;
+    }
+  }
+
+  private fun<T> ensureAvailabilityAndExecute(unavailabilityReturnSupplier: () -> T, executor: (availableSocket: Socket) -> T): T {
+    if (socket == null) {
+      for (i in 1..NUMBER_OF_RECONNECT_TRIALS) {
+        if (createConnection())
+          break
+
+        if (i == NUMBER_OF_RECONNECT_TRIALS)
+          return unavailabilityReturnSupplier()
+      }
     }
 
-    return executor.invoke(socket!!)
+    return try {
+      executor.invoke(socket!!)
+    } catch (exception: SocketException) {
+      // TODO: Should there be a check against the exception message "Broken pipe"?
+      // Force reconnect
+      socket = null;
+      ensureAvailabilityAndExecute(unavailabilityReturnSupplier, executor)
+    }
   }
 
   private fun executeCommand(command: SimModemCommand): Pair<ExecutionResult, SimModemResponse?> {
@@ -126,7 +149,6 @@ class SimModemSocketAdapter(
       outputStream.flush()
       val commandSentStamp = LocalDateTime.now()
 
-      // TODO: Handle timeout
       availableSocket.soTimeout = command.timeoutMs
 
       val inputStream = availableSocket.getInputStream()
