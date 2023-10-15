@@ -1,0 +1,11 @@
+[Unit]
+Description=Infinite loop socket_server screen watcher
+
+[Service]
+User=blvckbytes
+Type=simple
+ExecStart=/home/blvckbytes/sim-modem-api/socket_server/ensure_running.sh
+Restart=always
+
+[Install]
+WantedBy=default.target
