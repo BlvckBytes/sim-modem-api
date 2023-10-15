@@ -1,0 +1,11 @@
+[Unit]
+Description=Infinite loop rest_api_server screen watcher
+
+[Service]
+User=blvckbytes
+Type=simple
+ExecStart=/home/blvckbytes/sim-modem-api/rest_api_server/ensure_running.sh
+Restart=always
+
+[Install]
+WantedBy=default.target
