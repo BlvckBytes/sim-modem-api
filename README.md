@@ -33,19 +33,7 @@ To compile, use [compile.sh](socket_server/compile.sh). A named and detached scr
 
 ## Rest-API Server
 
-Currently available endpoints:
-
-```
-POST /sms
-{
-  "recipient": string,
-  "message": string
-}
-```
-
-```
-GET /health
-```
+Please read the code to find out about available endpoints, as things are rapidly changing at the moment. Documentation about these endpoints will be written eventually.
 
 To compile, use [compile.sh](rest_api_server/compile.sh). A named and detached screen that also logs to a uniquely named file can be created using [start.sh](rest_api_server/start.sh). The [ensure_running.sh](rest_api_server/ensure_running.sh) script checks periodically whether the named screen is up, and if it isn't, it calls said start script. The [ensure_running.service](rest_api_server/ensure_running.service) is a `systemd`-service, which makes sure that [ensure_running.sh](rest_api_server/ensure_running.sh) is up at all times. This service can be installed by making use of [install_service.sh](rest_api_server/install_service.sh).
 
