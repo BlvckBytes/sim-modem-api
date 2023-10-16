@@ -23,11 +23,24 @@
 #define SERIAL_DEVICE_PATH "/dev/ttyUSB2"
 #define SOCKET_AND_SERIAL_BUFFER_SIZE 1024
 
+#define PRINT_SOCKET_IO_HEX_AND_BINARY
+
 const char *occupied_message = "There's already a client in control";
 const char *heartbeat_timeout_message = "Your heartbeat timeout elapsed";
 const char *serial_down_message = "Serial port is or became unavailable, shutting down";
 
 // Settings - END
+
+#define BYTE_TO_BINARY_PATTERN "%c%c%c%c%c%c%c%c"
+#define BYTE_TO_BINARY(byte)  \
+  ((byte) & 0x80 ? '1' : '0'), \
+  ((byte) & 0x40 ? '1' : '0'), \
+  ((byte) & 0x20 ? '1' : '0'), \
+  ((byte) & 0x10 ? '1' : '0'), \
+  ((byte) & 0x08 ? '1' : '0'), \
+  ((byte) & 0x04 ? '1' : '0'), \
+  ((byte) & 0x02 ? '1' : '0'), \
+  ((byte) & 0x01 ? '1' : '0')
 
 int controlling_client_fd = -1;
 char socket_read_buffer[SOCKET_AND_SERIAL_BUFFER_SIZE];
@@ -68,6 +81,16 @@ void log_prefixed_printf(const char *format, ...)
     current_local_time.tm_sec,
     output_buffer
   );
+}
+
+void print_characters_hex_and_binary(const char *text)
+{
+  char c;
+  while ((c = *text))
+  {
+    printf(" %02X " BYTE_TO_BINARY_PATTERN, (int) c, BYTE_TO_BINARY(c));
+    text++;
+  }
 }
 
 void print_characters_readable(const char *text)
@@ -215,6 +238,12 @@ void *start_client_receive_loop(void *parameter)
     log_prefixed_printf("SER_W ->");
     print_characters_readable(message_head);
     puts("<-");
+
+    #ifdef PRINT_SOCKET_IO_HEX_AND_BINARY
+    log_prefixed_printf("SER_WB");
+    print_characters_hex_and_binary(message_head);
+    puts("");
+    #endif
   }
 
   return NULL;
@@ -324,6 +353,12 @@ void start_serial_receive_loop()
     log_prefixed_printf("SER_R ->");
     print_characters_readable(serial_port_read_buffer);
     puts("<-");
+
+    #ifdef PRINT_SOCKET_IO_HEX_AND_BINARY
+    log_prefixed_printf("SER_RB");
+    print_characters_hex_and_binary(serial_port_read_buffer);
+    puts("");
+    #endif
 
     if (controlling_client_fd < 0)
       continue;
