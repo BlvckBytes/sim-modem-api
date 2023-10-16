@@ -2,7 +2,9 @@ package me.blvckbytes.simmodemapi.rest
 
 import me.blvckbytes.simmodemapi.modem.SimModemCommandChain
 import me.blvckbytes.simmodemapi.modem.SimModemResultHandler
-import me.blvckbytes.simmodemapi.rest.sms.SendSmsRequestDto
+import me.blvckbytes.simmodemapi.rest.dto.SendSmsRequestDto
+import me.blvckbytes.simmodemapi.rest.dto.ExecutionResponseDto
+import me.blvckbytes.simmodemapi.rest.dto.SimModemCommandDto
 import org.springframework.stereotype.Service
 import org.springframework.web.context.request.async.DeferredResult
 

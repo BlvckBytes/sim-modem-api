@@ -1,6 +1,7 @@
-package me.blvckbytes.simmodemapi.rest
+package me.blvckbytes.simmodemapi.rest.dto
 
 import me.blvckbytes.simmodemapi.modem.SimModemResponse
+import me.blvckbytes.simmodemapi.rest.CommandGeneratorPort
 import java.time.LocalDateTime
 
 class SimModemCommandDto(

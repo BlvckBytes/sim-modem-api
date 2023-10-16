@@ -1,4 +1,4 @@
-package me.blvckbytes.simmodemapi.rest.sms
+package me.blvckbytes.simmodemapi.rest.dto
 
 import jakarta.validation.constraints.NotEmpty
 import jakarta.validation.constraints.Pattern

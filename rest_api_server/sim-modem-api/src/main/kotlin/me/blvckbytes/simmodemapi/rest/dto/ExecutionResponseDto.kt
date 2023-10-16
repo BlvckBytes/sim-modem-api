@@ -1,4 +1,4 @@
-package me.blvckbytes.simmodemapi.rest
+package me.blvckbytes.simmodemapi.rest.dto
 
 import me.blvckbytes.simmodemapi.modem.ExecutionResult
 
