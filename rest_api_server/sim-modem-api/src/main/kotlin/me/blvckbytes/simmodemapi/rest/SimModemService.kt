@@ -18,8 +18,16 @@ class SimModemService(
     return queueChain { commandGenerator.forSendingSms(data.recipient!!, data.message!!, it) }
   }
 
-  fun getHealth(): DeferredResult<ExecutionResponseDto> {
-    return queueChain { commandGenerator.forHealth(it) }
+  fun getSignalQuality(): DeferredResult<ExecutionResponseDto> {
+    return queueChain { commandGenerator.forSignalQuality(it) }
+  }
+
+  fun getSelectedCharacterSet(): DeferredResult<ExecutionResponseDto> {
+    return queueChain { commandGenerator.forSelectedCharacterSet(it) }
+  }
+
+  fun getSelectableCharacterSets(): DeferredResult<ExecutionResponseDto> {
+    return queueChain { commandGenerator.forSelectableCharacterSets(it) }
   }
 
   private fun queueChain(generator: (resultHandler: SimModemResultHandler) -> SimModemCommandChain): DeferredResult<ExecutionResponseDto> {

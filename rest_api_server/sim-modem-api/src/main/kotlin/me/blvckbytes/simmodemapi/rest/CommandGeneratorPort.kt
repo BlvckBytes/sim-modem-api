@@ -7,7 +7,11 @@ interface CommandGeneratorPort {
 
   fun forSendingSms(recipient: String, message: String, resultHandler: SimModemResultHandler): SimModemCommandChain
 
-  fun forHealth(resultHandler: SimModemResultHandler): SimModemCommandChain
+  fun forSignalQuality(resultHandler: SimModemResultHandler): SimModemCommandChain
+
+  fun forSelectedCharacterSet(resultHandler: SimModemResultHandler): SimModemCommandChain
+
+  fun forSelectableCharacterSets(resultHandler: SimModemResultHandler): SimModemCommandChain
 
   fun trimControlCharacters(input: String): String
 

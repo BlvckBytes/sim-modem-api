@@ -29,9 +29,21 @@ class CommandGeneratorAdapter : CommandGeneratorPort {
     ), resultHandler)
   }
 
-  override fun forHealth(resultHandler: SimModemResultHandler): SimModemCommandChain {
-    return SimModemCommandChain(CommandChainType.HEALTH, listOf(
+  override fun forSignalQuality(resultHandler: SimModemResultHandler): SimModemCommandChain {
+    return SimModemCommandChain(CommandChainType.SIGNAL_QUALITY, listOf(
       SimModemCommand("AT+CSQ\r\n", DEFAULT_TIMEOUT_MS, PREDICATE_ENDS_IN_OK)
+    ), resultHandler)
+  }
+
+  override fun forSelectedCharacterSet(resultHandler: SimModemResultHandler): SimModemCommandChain {
+    return SimModemCommandChain(CommandChainType.SELECTED_CHARACTER_SET, listOf(
+      SimModemCommand("AT+CSCS?\r\n", DEFAULT_TIMEOUT_MS, PREDICATE_ENDS_IN_OK)
+    ), resultHandler)
+  }
+
+  override fun forSelectableCharacterSets(resultHandler: SimModemResultHandler): SimModemCommandChain {
+    return SimModemCommandChain(CommandChainType.SELECTABLE_CHARACTER_SETS, listOf(
+      SimModemCommand("AT+CSCS=?\r\n", DEFAULT_TIMEOUT_MS, PREDICATE_ENDS_IN_OK)
     ), resultHandler)
   }
 
