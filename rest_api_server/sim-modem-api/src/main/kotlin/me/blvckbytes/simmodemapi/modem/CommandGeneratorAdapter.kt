@@ -19,20 +19,20 @@ class CommandGeneratorAdapter : CommandGeneratorPort {
     }
   }
 
-  override fun forSendingSms(recipient: String, message: String): List<SimModemCommand> {
-    return listOf(
+  override fun forSendingSms(recipient: String, message: String, resultHandler: SimModemResultHandler): SimModemCommandChain {
+    return SimModemCommandChain(CommandChainType.SEND_SMS, listOf(
       SimModemCommand("AT+CMGF=1\r\n", DEFAULT_TIMEOUT_MS, PREDICATE_ENDS_IN_OK),
       SimModemCommand("AT+CSCS=\"GSM\"\r\n", DEFAULT_TIMEOUT_MS, PREDICATE_ENDS_IN_OK),
       SimModemCommand("AT+CSCA=\"${MESSAGE_CENTER}\"\r\n", DEFAULT_TIMEOUT_MS, PREDICATE_ENDS_IN_OK),
       SimModemCommand("AT+CMGS=\"${recipient}\"\r\n", DEFAULT_TIMEOUT_MS, PREDICATE_PROMPT),
       SimModemCommand("${message}\u001A\r\n", 10 * 1000, PREDICATE_ENDS_IN_OK),
-    )
+    ), resultHandler)
   }
 
-  override fun forHealth(): List<SimModemCommand> {
-    return listOf(
+  override fun forHealth(resultHandler: SimModemResultHandler): SimModemCommandChain {
+    return SimModemCommandChain(CommandChainType.HEALTH, listOf(
       SimModemCommand("AT+CSQ\r\n", DEFAULT_TIMEOUT_MS, PREDICATE_ENDS_IN_OK)
-    )
+    ), resultHandler)
   }
 
   override fun trimControlCharacters(input: String): String {

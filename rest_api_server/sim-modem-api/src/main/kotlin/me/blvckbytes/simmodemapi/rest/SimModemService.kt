@@ -1,6 +1,7 @@
 package me.blvckbytes.simmodemapi.rest
 
-import me.blvckbytes.simmodemapi.modem.SimModemCommand
+import me.blvckbytes.simmodemapi.modem.SimModemCommandChain
+import me.blvckbytes.simmodemapi.modem.SimModemResultHandler
 import me.blvckbytes.simmodemapi.rest.sms.SendSmsRequestDto
 import org.springframework.stereotype.Service
 import org.springframework.web.context.request.async.DeferredResult
@@ -12,22 +13,20 @@ class SimModemService(
 ) {
 
   fun sendSms(data: SendSmsRequestDto): DeferredResult<ExecutionResponseDto> {
-    return queueChain(commandGenerator.forSendingSms(data.recipient!!, data.message!!))
+    return queueChain { commandGenerator.forSendingSms(data.recipient!!, data.message!!, it) }
   }
 
   fun getHealth(): DeferredResult<ExecutionResponseDto> {
-    return queueChain(commandGenerator.forHealth())
+    return queueChain { commandGenerator.forHealth(it) }
   }
 
-  private fun queueChain(commandChain: List<SimModemCommand>): DeferredResult<ExecutionResponseDto> {
+  private fun queueChain(generator: (resultHandler: SimModemResultHandler) -> SimModemCommandChain): DeferredResult<ExecutionResponseDto> {
     val deferredResult = DeferredResult<ExecutionResponseDto>()
-
-    simModemSocket.queueExecution(commandChain) { result, responses ->
-      deferredResult.setResult(ExecutionResponseDto(result, responses.map {
-        SimModemCommandDto.fromModel(it, commandGenerator)
-      }))
-    }
-
+    simModemSocket.queueExecution(generator(
+      SimModemResultHandler { result, responses ->
+        deferredResult.setResult(ExecutionResponseDto(result, responses.map { SimModemCommandDto.fromModel(it, commandGenerator) } ))
+      }
+    ))
     return deferredResult
   }
 }

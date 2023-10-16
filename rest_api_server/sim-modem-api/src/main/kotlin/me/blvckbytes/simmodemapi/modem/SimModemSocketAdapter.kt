@@ -24,22 +24,26 @@ class SimModemSocketAdapter(
 ) : SimModemSocketPort {
 
   companion object {
-    private const val READ_BUFFER_SIZE = 1024;
-    private const val NUMBER_OF_RECONNECT_TRIALS = 3;
+    private const val READ_BUFFER_SIZE = 1024
+    private const val NUMBER_OF_RECONNECT_TRIALS = 3
+    private const val QUEUE_PEEK_DELAY_MS = 10L
   }
 
   private var socket: Socket? = null
   private var lastHeartbeatSend: Long = 0
-  private val commandQueue = ConcurrentLinkedQueue<Pair<List<SimModemCommand>, SimModemResultHandler>>()
+  private val commandQueue = ConcurrentLinkedQueue<SimModemCommandChain>()
   private val logger = LoggerFactory.getLogger(SimModemSocketAdapter::class.java)
+
+  private var lastChainType: CommandChainType? = null
+  private var lastChainFinish: Long = 0
 
   init {
     startQueuePopThread()
     startHeartbeatThread()
   }
 
-  override fun queueExecution(commandChain: List<SimModemCommand>, resultHandler: SimModemResultHandler) {
-    commandQueue.add(Pair(commandChain, resultHandler))
+  override fun queueExecution(commandChain: SimModemCommandChain) {
+    commandQueue.add(commandChain)
   }
 
   private fun startHeartbeatThread() {
@@ -67,43 +71,59 @@ class SimModemSocketAdapter(
   private fun startQueuePopThread() {
     thread(name = "queue-pop") {
       while (true) {
-        val entry = commandQueue.poll()
+        var nextChain: SimModemCommandChain?
 
-        if (entry == null) {
-          Thread.sleep(10)
+        synchronized(commandQueue) {
+          nextChain = commandQueue.peek()
+
+          if (nextChain == null)
+            return@synchronized
+
+          if (System.currentTimeMillis() - lastChainFinish < nextChain!!.type.requiredDelayFrom(lastChainType)) {
+            nextChain = null
+            return@synchronized
+          }
+
+          commandQueue.poll()
+        }
+
+        if (nextChain == null) {
+          Thread.sleep(QUEUE_PEEK_DELAY_MS)
           continue
         }
 
-        executeChain(entry.first, entry.second)
+        lastChainType = nextChain!!.type
+        executeChain(nextChain!!)
+        lastChainFinish = System.currentTimeMillis()
       }
     }
   }
 
-  private fun executeChain(commandChain: List<SimModemCommand>, resultHandler: SimModemResultHandler) {
+  private fun executeChain(commandChain: SimModemCommandChain) {
     val responses = mutableListOf<SimModemResponse>()
 
-    for (command in commandChain) {
+    for (command in commandChain.commands) {
       val result = executeCommand(command)
 
       if (result.first == ExecutionResult.UNAVAILABLE) {
-        resultHandler.handle(ExecutionResult.UNAVAILABLE, listOf())
+        commandChain.resultHandler.handle(ExecutionResult.UNAVAILABLE, listOf())
         break
       }
 
       if (result.first == ExecutionResult.TIMED_OUT) {
-        resultHandler.handle(ExecutionResult.TIMED_OUT, listOf())
+        commandChain.resultHandler.handle(ExecutionResult.TIMED_OUT, listOf())
         break
       }
 
       responses.add(result.second!!)
 
       if (result.first != ExecutionResult.SUCCESS) {
-        resultHandler.handle(result.first, responses)
+        commandChain.resultHandler.handle(result.first, responses)
         break
       }
     }
 
-    resultHandler.handle(ExecutionResult.SUCCESS, responses)
+    commandChain.resultHandler.handle(ExecutionResult.SUCCESS, responses)
   }
 
   private fun createConnection(): Boolean {
@@ -114,10 +134,10 @@ class SimModemSocketAdapter(
       socket = Socket(socketServerHost, socketServerPort)
       logger.info("Connected to socket server on ${socketServerHost}:${socketServerPort}")
       lastHeartbeatSend = 0
-      true;
+      true
     } catch (exception: java.lang.Exception) {
       logger.error("Could not connect to socket server on ${socketServerHost}:${socketServerPort}", exception)
-      false;
+      false
     }
   }
 
@@ -137,7 +157,7 @@ class SimModemSocketAdapter(
     } catch (exception: SocketException) {
       // TODO: Should there be a check against the exception message "Broken pipe"?
       // Force reconnect
-      socket = null;
+      socket = null
       ensureAvailabilityAndExecute(unavailabilityReturnSupplier, executor)
     }
   }

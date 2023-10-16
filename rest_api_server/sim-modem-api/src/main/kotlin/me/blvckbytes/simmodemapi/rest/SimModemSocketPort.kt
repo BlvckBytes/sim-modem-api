@@ -1,10 +1,9 @@
 package me.blvckbytes.simmodemapi.rest
 
-import me.blvckbytes.simmodemapi.modem.SimModemCommand
-import me.blvckbytes.simmodemapi.modem.SimModemResultHandler
+import me.blvckbytes.simmodemapi.modem.SimModemCommandChain
 
 interface SimModemSocketPort {
 
-  fun queueExecution(commandChain: List<SimModemCommand>, resultHandler: SimModemResultHandler)
+  fun queueExecution(commandChain: SimModemCommandChain)
 
 }
