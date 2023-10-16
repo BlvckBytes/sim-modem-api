@@ -50,7 +50,7 @@ class CommandGeneratorAdapter : CommandGeneratorPort {
       makeCommandFromParts(DEFAULT_TIMEOUT_MS, PREDICATE_PROMPT, Pair("AT+CMGS=\"${recipient}\"\r\n", AsciiTextCoder)),
       makeCommandFromParts(
         10 * 1000, PREDICATE_ENDS_IN_OK,
-        Pair(message, AsciiTextCoder),
+        Pair(message, GsmTextCoder),
         Pair("\u001A\r\n", AsciiTextCoder)
       )
     ), resultHandler)
