@@ -34,7 +34,7 @@ class SimModemService(
     val deferredResult = DeferredResult<ExecutionResponseDto>()
     simModemSocket.queueExecution(generator(
       SimModemResultHandler { result, responses ->
-        deferredResult.setResult(ExecutionResponseDto(result, responses.map { SimModemCommandDto.fromModel(it, commandGenerator) } ))
+        deferredResult.setResult(ExecutionResponseDto(result, responses.map(SimModemCommandDto.Companion::fromModel)))
       }
     ))
     return deferredResult

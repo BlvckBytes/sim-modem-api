@@ -165,7 +165,7 @@ class SimModemSocketAdapter(
   private fun executeCommand(command: SimModemCommand): Pair<ExecutionResult, SimModemResponse?> {
     return ensureAvailabilityAndExecute({ Pair(ExecutionResult.UNAVAILABLE, null) }) { availableSocket ->
       val outputStream = availableSocket.getOutputStream()
-      outputStream.write(command.command.encodeToByteArray())
+      outputStream.write(command.binaryCommand)
       outputStream.flush()
       val commandSentStamp = LocalDateTime.now()
 
@@ -177,7 +177,9 @@ class SimModemSocketAdapter(
         val buffer = ByteArray(READ_BUFFER_SIZE)
         var amountRead = inputStream.read(buffer)
         var responseReceivedStamp = LocalDateTime.now()
-        var responseContent = buffer.decodeToString(0, amountRead)
+
+        val responseBufferSlice = buffer.sliceArray(0 until amountRead)
+        var responseContent = responseBufferSlice.decodeToString()
 
         // Man, what a HACK
         while (responseContent == "\r\n") {
@@ -186,7 +188,13 @@ class SimModemSocketAdapter(
           responseContent = buffer.decodeToString(0, amountRead)
         }
 
-        val response = SimModemResponse(responseContent, command, commandSentStamp, responseReceivedStamp)
+        val response = SimModemResponse(
+          responseBufferSlice,
+          CommandGeneratorAdapter.substituteUnprintableAscii(responseContent),
+          command,
+          commandSentStamp,
+          responseReceivedStamp
+        )
 
         if (command.responsePredicate?.apply(responseContent) == false)
           return@ensureAvailabilityAndExecute Pair(ExecutionResult.PREDICATE_MISMATCH, response)
