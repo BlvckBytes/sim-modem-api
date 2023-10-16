@@ -74,8 +74,8 @@ class CommandGeneratorAdapter : CommandGeneratorPort {
     ), resultHandler)
   }
 
-  override fun trimControlCharacters(input: String): String {
-    return Companion.trimControlCharacters(input)
+  override fun forCustomCommand(resultHandler: SimModemResultHandler, command: SimModemCommand): SimModemCommandChain {
+    return SimModemCommandChain(CommandChainType.CUSTOM_COMMAND, listOf(command), resultHandler)
   }
 
   private fun makeCommandFromParts(

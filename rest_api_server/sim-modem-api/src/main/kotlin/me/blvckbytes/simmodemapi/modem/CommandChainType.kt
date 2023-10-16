@@ -8,4 +8,5 @@ enum class CommandChainType(
   SIGNAL_QUALITY({ 0 }),
   SELECTED_CHARACTER_SET({ 0 }),
   SELECTABLE_CHARACTER_SETS({ 0 }),
+  CUSTOM_COMMAND({ 0 })
 }

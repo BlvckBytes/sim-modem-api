@@ -2,6 +2,7 @@ package me.blvckbytes.simmodemapi.rest
 
 import me.blvckbytes.simmodemapi.modem.SimModemCommandChain
 import me.blvckbytes.simmodemapi.modem.SimModemResultHandler
+import me.blvckbytes.simmodemapi.rest.dto.CustomCommandDto
 import me.blvckbytes.simmodemapi.rest.dto.SendSmsRequestDto
 import me.blvckbytes.simmodemapi.rest.dto.ExecutionResponseDto
 import me.blvckbytes.simmodemapi.rest.dto.SimModemCommandDto
@@ -28,6 +29,10 @@ class SimModemService(
 
   fun getSelectableCharacterSets(): DeferredResult<ExecutionResponseDto> {
     return queueChain { commandGenerator.forSelectableCharacterSets(it) }
+  }
+
+  fun executeCustomCommand(command: CustomCommandDto): DeferredResult<ExecutionResponseDto> {
+    return queueChain { commandGenerator.forCustomCommand(it, command.toCommand()) }
   }
 
   private fun queueChain(generator: (resultHandler: SimModemResultHandler) -> SimModemCommandChain): DeferredResult<ExecutionResponseDto> {

@@ -1,5 +1,6 @@
 package me.blvckbytes.simmodemapi.rest
 
+import me.blvckbytes.simmodemapi.modem.SimModemCommand
 import me.blvckbytes.simmodemapi.modem.SimModemCommandChain
 import me.blvckbytes.simmodemapi.modem.SimModemResultHandler
 
@@ -13,6 +14,6 @@ interface CommandGeneratorPort {
 
   fun forSelectableCharacterSets(resultHandler: SimModemResultHandler): SimModemCommandChain
 
-  fun trimControlCharacters(input: String): String
+  fun forCustomCommand(resultHandler: SimModemResultHandler, command: SimModemCommand): SimModemCommandChain
 
 }
