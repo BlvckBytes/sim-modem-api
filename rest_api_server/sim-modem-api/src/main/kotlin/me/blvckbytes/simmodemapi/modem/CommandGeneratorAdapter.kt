@@ -18,6 +18,13 @@ class CommandGeneratorAdapter : CommandGeneratorPort {
       return input.trim { it in CONTROL_CHARACTERS }
     }
 
+    fun binaryToHexString(buffer: ByteArray): String {
+      val result = StringBuilder()
+      for (byte in buffer)
+        result.append("%02X".format(byte))
+      return result.toString()
+    }
+
     fun substituteUnprintableAscii(value: String): String {
       val valueCharacters = value.toCharArray()
       val result = StringBuilder()
