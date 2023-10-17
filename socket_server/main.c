@@ -83,21 +83,21 @@ void log_prefixed_printf(const char *format, ...)
   );
 }
 
-void print_characters_hex_and_binary(const char *text)
+void print_characters_hex_and_binary(const char *text, int length)
 {
-  char c;
-  while ((c = *text))
+  for (int i = 0; i < length; i++)
   {
-    printf(" %02X " BYTE_TO_BINARY_PATTERN, (int) c, BYTE_TO_BINARY(c));
+    printf(" %02X " BYTE_TO_BINARY_PATTERN, (int) *text, BYTE_TO_BINARY(*text));
     text++;
   }
 }
 
-void print_characters_readable(const char *text)
+void print_characters_readable(const char *text, int length)
 {
-  char c;
-  while ((c = *text))
+  for (int i = 0; i < length; i++)
   {
+    char c = *text;
+
     if (c < 32)
     {
       if (c == '\n')
@@ -235,13 +235,13 @@ void *start_client_receive_loop(void *parameter)
 
     write(serial_port_fd, message_head, message_length);
 
-    log_prefixed_printf("SER_W ->");
-    print_characters_readable(message_head);
+    log_prefixed_printf("SER_W(%d) ->", message_length);
+    print_characters_readable(message_head, message_length);
     puts("<-");
 
     #ifdef PRINT_SOCKET_IO_HEX_AND_BINARY
-    log_prefixed_printf("SER_WB");
-    print_characters_hex_and_binary(message_head);
+    log_prefixed_printf("SER_WB(%d)", message_length);
+    print_characters_hex_and_binary(message_head, message_length);
     puts("");
     #endif
   }
@@ -350,13 +350,13 @@ void start_serial_receive_loop()
 
     serial_port_read_buffer[read_bytes] = 0;
 
-    log_prefixed_printf("SER_R ->");
-    print_characters_readable(serial_port_read_buffer);
+    log_prefixed_printf("SER_R(%d) ->", read_bytes);
+    print_characters_readable(serial_port_read_buffer, read_bytes);
     puts("<-");
 
     #ifdef PRINT_SOCKET_IO_HEX_AND_BINARY
-    log_prefixed_printf("SER_RB");
-    print_characters_hex_and_binary(serial_port_read_buffer);
+    log_prefixed_printf("SER_RB(%d)", read_bytes);
+    print_characters_hex_and_binary(serial_port_read_buffer, read_bytes);
     puts("");
     #endif
 
