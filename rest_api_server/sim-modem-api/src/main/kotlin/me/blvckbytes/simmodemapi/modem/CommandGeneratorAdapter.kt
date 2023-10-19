@@ -8,6 +8,8 @@ class CommandGeneratorAdapter : CommandGeneratorPort {
 
   companion object {
     private const val DEFAULT_TIMEOUT_MS = 1000
+
+    // TODO: This value should be configurable
     private const val MESSAGE_CENTER = "+4365009000000"
 
     private val CONTROL_CHARACTERS = (0..31).map { it.toChar() }
@@ -50,15 +52,39 @@ class CommandGeneratorAdapter : CommandGeneratorPort {
   }
 
   override fun forSendingSms(recipient: String, message: String, resultHandler: SimModemResultHandler): SimModemCommandChain {
+    val gsmCodedMessage = GsmTextCoder.encode(message)
+    val numberOfCharacters = gsmCodedMessage.size
+    val packedMessage = PduHelper.packSevenBitCharacters(gsmCodedMessage)
+
+    val pduBytes = mutableListOf<Byte>()
+    val smscLength = PduHelper.writeSMSC(MESSAGE_CENTER, pduBytes)
+
+    PduHelper.writeMessageFlags(
+      rejectDuplicates = false,
+      statusReport = true,
+      userDataHeader = false,
+      replyPath = false,
+      pduBytes
+    )
+
+    PduHelper.writeMessageReferenceNumber(null, pduBytes)
+    PduHelper.writeDestination(recipient, pduBytes)
+    PduHelper.writeProtocolIdentifier(pduBytes)
+    PduHelper.writeUserDataCodingScheme(isNormalSms = true, isNotSevenBitsPerChar = false, pduBytes)
+    PduHelper.writeUserData(numberOfCharacters, packedMessage, pduBytes)
+
     return SimModemCommandChain(CommandChainType.SEND_SMS, listOf(
-      makeCommandFromParts(DEFAULT_TIMEOUT_MS, PREDICATE_ENDS_IN_OK, Pair("AT+CMGF=1\r\n", AsciiTextCoder)),
-      makeCommandFromParts(DEFAULT_TIMEOUT_MS, PREDICATE_ENDS_IN_OK, Pair("AT+CSCS=\"GSM\"\r\n", AsciiTextCoder)),
-      makeCommandFromParts(DEFAULT_TIMEOUT_MS, PREDICATE_ENDS_IN_OK, Pair("AT+CSCA=\"${MESSAGE_CENTER}\"\r\n", AsciiTextCoder)),
-      makeCommandFromParts(DEFAULT_TIMEOUT_MS, PREDICATE_PROMPT, Pair("AT+CMGS=\"${recipient}\"\r\n", AsciiTextCoder)),
+      // Set SMS input mode to PDU
+      makeCommandFromParts(DEFAULT_TIMEOUT_MS, PREDICATE_ENDS_IN_OK, Pair("AT+CMGF=0\r\n", AsciiTextCoder)),
+      makeCommandFromParts(
+        DEFAULT_TIMEOUT_MS, PREDICATE_PROMPT,
+        Pair("AT+CMGS=${pduBytes.size - smscLength}\r\n", AsciiTextCoder),
+        Pair("\r\n", AsciiTextCoder),
+      ),
       makeCommandFromParts(
         10 * 1000, PREDICATE_ENDS_IN_OK,
-        Pair(message, GsmTextCoder),
-        Pair("\u001A\r\n", AsciiTextCoder)
+        Pair(binaryToHexString(pduBytes.toByteArray()), AsciiTextCoder),
+        Pair("\u001A", AsciiTextCoder),
       )
     ), resultHandler)
   }
