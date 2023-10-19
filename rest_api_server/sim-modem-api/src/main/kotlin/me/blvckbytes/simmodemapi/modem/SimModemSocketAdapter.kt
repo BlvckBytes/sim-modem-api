@@ -27,6 +27,7 @@ class SimModemSocketAdapter(
     private const val READ_BUFFER_SIZE = 1024
     private const val NUMBER_OF_RECONNECT_TRIALS = 3
     private const val QUEUE_PEEK_DELAY_MS = 10L
+    private const val COMMAND_HISTORY_SIZE = 32
   }
 
   private var socket: Socket? = null
@@ -34,8 +35,7 @@ class SimModemSocketAdapter(
   private val commandQueue = ConcurrentLinkedQueue<SimModemCommandChain>()
   private val logger = LoggerFactory.getLogger(SimModemSocketAdapter::class.java)
 
-  private var lastChainType: CommandChainType? = null
-  private var lastChainFinish: Long = 0
+  private var commandTypeHistory = CommandTypeHistory(COMMAND_HISTORY_SIZE)
 
   init {
     startQueuePopThread()
@@ -79,7 +79,7 @@ class SimModemSocketAdapter(
           if (nextChain == null)
             return@synchronized
 
-          if (System.currentTimeMillis() - lastChainFinish < nextChain!!.type.requiredDelayFrom(lastChainType)) {
+          if (!commandTypeHistory.isReadyToBeExecuted(nextChain!!.type)) {
             nextChain = null
             return@synchronized
           }
@@ -92,9 +92,8 @@ class SimModemSocketAdapter(
           continue
         }
 
-        lastChainType = nextChain!!.type
         executeChain(nextChain!!)
-        lastChainFinish = System.currentTimeMillis()
+        commandTypeHistory.add(nextChain!!.type)
       }
     }
   }
