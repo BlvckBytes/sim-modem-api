@@ -1,8 +1,8 @@
 package me.blvckbytes.simmodemapi.modem
 
-object AsciiTextCoder : TextCoder {
+object AsciiTextCoder {
 
-  override fun encode(value: String): ByteArray {
+  fun encode(value: String): ByteArray {
     return value.toByteArray(Charsets.US_ASCII)
   }
 }

@@ -1,8 +1,8 @@
 package me.blvckbytes.simmodemapi.modem
 
-object GsmTextCoder : TextCoder {
+object GsmTextCoder {
 
-  override fun encode(value: String): ByteArray {
+  fun encode(value: String): ByteArray {
     // Worst case: Each character needs two bytes for encoding
     val result = ByteArray(value.length * 2)
     var resultPointer = 0
@@ -147,6 +147,8 @@ object GsmTextCoder : TextCoder {
         'ñ' -> 0x7D // (Small letter n with tilde)
         'ü' -> 0x7E // (Small letter u with diaeresis)
         'à' -> 0x7F // (Small letter a with grave accent)
+
+        // TODO: Illegal characters should throw an exception
         else -> '?'.code
       }
 

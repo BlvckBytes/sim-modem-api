@@ -74,36 +74,27 @@ class CommandGeneratorAdapter : CommandGeneratorPort {
     PduHelper.writeUserData(numberOfCharacters, packedMessage, pduBytes)
 
     return SimModemCommandChain(CommandChainType.SEND_SMS, listOf(
-      // Set SMS input mode to PDU
-      makeCommandFromParts(DEFAULT_TIMEOUT_MS, PREDICATE_ENDS_IN_OK, Pair("AT+CMGF=0\r\n", AsciiTextCoder)),
-      makeCommandFromParts(
-        DEFAULT_TIMEOUT_MS, PREDICATE_PROMPT,
-        Pair("AT+CMGS=${pduBytes.size - smscLength}\r\n", AsciiTextCoder),
-        Pair("\r\n", AsciiTextCoder),
-      ),
-      makeCommandFromParts(
-        10 * 1000, PREDICATE_ENDS_IN_OK,
-        Pair(binaryToHexString(pduBytes.toByteArray()), AsciiTextCoder),
-        Pair("\u001A", AsciiTextCoder),
-      )
+      makeCommand(DEFAULT_TIMEOUT_MS, PREDICATE_ENDS_IN_OK, "AT+CMGF=0\r\n"),
+      makeCommand(DEFAULT_TIMEOUT_MS, PREDICATE_PROMPT, "AT+CMGS=${pduBytes.size - smscLength}\r\n"),
+      makeCommand(10 * 1000, PREDICATE_ENDS_IN_OK, "${binaryToHexString(pduBytes.toByteArray())}\u001A")
     ), resultHandler)
   }
 
   override fun forSignalQuality(resultHandler: SimModemResultHandler): SimModemCommandChain {
     return SimModemCommandChain(CommandChainType.SIGNAL_QUALITY, listOf(
-      makeCommandFromParts(DEFAULT_TIMEOUT_MS, PREDICATE_ENDS_IN_OK, Pair("AT+CSQ\r\n", AsciiTextCoder))
+      makeCommand(DEFAULT_TIMEOUT_MS, PREDICATE_ENDS_IN_OK, "AT+CSQ\r\n")
     ), resultHandler)
   }
 
   override fun forSelectedCharacterSet(resultHandler: SimModemResultHandler): SimModemCommandChain {
     return SimModemCommandChain(CommandChainType.SELECTED_CHARACTER_SET, listOf(
-      makeCommandFromParts(DEFAULT_TIMEOUT_MS, PREDICATE_ENDS_IN_OK, Pair("AT+CSCS?\r\n", AsciiTextCoder))
+      makeCommand(DEFAULT_TIMEOUT_MS, PREDICATE_ENDS_IN_OK, "AT+CSCS?\r\n")
     ), resultHandler)
   }
 
   override fun forSelectableCharacterSets(resultHandler: SimModemResultHandler): SimModemCommandChain {
     return SimModemCommandChain(CommandChainType.SELECTABLE_CHARACTER_SETS, listOf(
-      makeCommandFromParts(DEFAULT_TIMEOUT_MS, PREDICATE_ENDS_IN_OK, Pair("AT+CSCS=?\r\n", AsciiTextCoder))
+      makeCommand(DEFAULT_TIMEOUT_MS, PREDICATE_ENDS_IN_OK, "AT+CSCS=?\r\n")
     ), resultHandler)
   }
 
@@ -111,33 +102,14 @@ class CommandGeneratorAdapter : CommandGeneratorPort {
     return SimModemCommandChain(CommandChainType.CUSTOM_COMMAND, listOf(command), resultHandler)
   }
 
-  private fun makeCommandFromParts(
+  private fun makeCommand(
     timeoutMs: Int,
     responsePredicate: ResponsePredicate?,
-    vararg commandParts: Pair<String, TextCoder>
+    command: String
   ): SimModemCommand {
-    val readableResult = StringBuilder()
-    val commandArrays = mutableListOf<ByteArray>()
-    var totalByteLength = 0
-
-    for (commandPart in commandParts) {
-      val encodedPart = commandPart.second.encode(commandPart.first)
-      commandArrays.add(encodedPart)
-      totalByteLength += encodedPart.size
-      readableResult.append(substituteUnprintableAscii(commandPart.first))
-    }
-
-    val resultArray = ByteArray(totalByteLength)
-    var resultIndex = 0
-
-    for (commandArray in commandArrays) {
-      commandArray.copyInto(resultArray, resultIndex)
-      resultIndex += commandArray.size
-    }
-
     return SimModemCommand(
-      resultArray,
-      readableResult.toString(),
+      AsciiTextCoder.encode(command),
+      substituteUnprintableAscii(command),
       timeoutMs,
       responsePredicate
     )
