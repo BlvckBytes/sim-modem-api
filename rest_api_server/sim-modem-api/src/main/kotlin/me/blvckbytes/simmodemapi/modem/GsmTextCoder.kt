@@ -149,7 +149,7 @@ object GsmTextCoder {
         'à' -> 0x7F // (Small letter a with grave accent)
 
         // TODO: Illegal characters should throw an exception
-        else -> '?'.code
+        else -> throw IllegalCharacterException(char)
       }
 
       if (gsmCode > 0xFF)

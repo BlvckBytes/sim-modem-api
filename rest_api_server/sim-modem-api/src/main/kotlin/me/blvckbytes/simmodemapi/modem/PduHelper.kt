@@ -95,9 +95,8 @@ object PduHelper {
     return 1
   }
 
-  fun writeUserDataCodingScheme(
-    isNormalSms: Boolean,
-    isNotSevenBitsPerChar: Boolean,
+  fun writeDataCodingScheme(
+    alphabet: PduAlphabet,
     output: MutableList<Byte>
   ): Int {
     /*
@@ -106,26 +105,24 @@ object PduHelper {
       Bit 1,0: Message class, 00 means show but don't save, 01 means "normal" SMS
       Bit 2:   Encoding due to character set, 0 means GSM charset (7 bit/char), 1 means other (8 bit/char)
       Bit 3:   Reserved field, has to be 0
-      Bit 7-4: Seems to dictate >this byte's< structure, and a value of 1111 represents this makeup
+      Bit 7-4: Coding Group, 00XX - General data coding, then:
+      Bit 5:   1 means GSM standard compressed, 0 means uncompressed
+      Bit 4:   1 means bits 1,0 store a message class, 0 means that they have no meaning
+      Bit 3,2: Indicate used alphabet, as follows:
+      00 Default Alphabet (GSM 7 bit)
+      01 8 bit
+      10 UCS2 (16 bit)
+      11 Reserved
      */
-    var scheme = 0b11110000
-
-    if (isNormalSms)
-      scheme = scheme or 0b00000001
-
-    if (isNotSevenBitsPerChar)
-      scheme = scheme or 0b00000100
-
-    output.add(scheme.toByte())
+    output.add((0b00010001 or alphabet.bitPattern).toByte())
     return 1
   }
 
   fun writeUserData(
-    numberOfCharacters: Int,
     message: ByteArray,
     output: MutableList<Byte>
   ): Int {
-    output.add(numberOfCharacters.toByte())
+    output.add(message.size.toByte())
     message.forEach { output.add(it) }
     return message.size + 1
   }

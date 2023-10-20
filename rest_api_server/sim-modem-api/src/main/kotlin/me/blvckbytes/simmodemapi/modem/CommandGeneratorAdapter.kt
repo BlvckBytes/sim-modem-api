@@ -51,10 +51,13 @@ class CommandGeneratorAdapter : CommandGeneratorPort {
     }
   }
 
+  private class MessageEncodingResult(
+    val bytes: ByteArray,
+    val alphabet: PduAlphabet
+  )
+
   override fun forSendingSms(recipient: String, message: String, resultHandler: SimModemResultHandler): SimModemCommandChain {
-    val gsmCodedMessage = GsmTextCoder.encode(message)
-    val numberOfCharacters = gsmCodedMessage.size
-    val packedMessage = PduHelper.packSevenBitCharacters(gsmCodedMessage)
+    val encodingResult = tryEncodeMessage(message)
 
     val pduBytes = mutableListOf<Byte>()
     val smscLength = PduHelper.writeSMSC(MESSAGE_CENTER, pduBytes)
@@ -70,8 +73,8 @@ class CommandGeneratorAdapter : CommandGeneratorPort {
     PduHelper.writeMessageReferenceNumber(null, pduBytes)
     PduHelper.writeDestination(recipient, pduBytes)
     PduHelper.writeProtocolIdentifier(pduBytes)
-    PduHelper.writeUserDataCodingScheme(isNormalSms = true, isNotSevenBitsPerChar = false, pduBytes)
-    PduHelper.writeUserData(numberOfCharacters, packedMessage, pduBytes)
+    PduHelper.writeDataCodingScheme(encodingResult.alphabet, pduBytes)
+    PduHelper.writeUserData(encodingResult.bytes, pduBytes)
 
     return SimModemCommandChain(CommandChainType.SEND_SMS, listOf(
       makeCommand(DEFAULT_TIMEOUT_MS, PREDICATE_ENDS_IN_OK, "AT+CMGF=0\r\n"),
@@ -113,5 +116,14 @@ class CommandGeneratorAdapter : CommandGeneratorPort {
       timeoutMs,
       responsePredicate
     )
+  }
+
+  private fun tryEncodeMessage(message: String): MessageEncodingResult {
+    return try {
+      val messageBytes = GsmTextCoder.encode(message)
+      MessageEncodingResult(PduHelper.packSevenBitCharacters(messageBytes), PduAlphabet.GSM_SEVEN_BIT)
+    } catch (exception: IllegalCharacterException) {
+      MessageEncodingResult(UCS2TextCoder.encode(message), PduAlphabet.UCS2_SIXTEEN_BIT)
+    }
   }
 }
