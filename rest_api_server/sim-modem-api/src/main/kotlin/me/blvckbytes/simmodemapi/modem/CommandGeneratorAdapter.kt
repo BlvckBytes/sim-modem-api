@@ -57,6 +57,7 @@ class CommandGeneratorAdapter : CommandGeneratorPort {
   )
 
   override fun forSendingSms(recipient: String, message: String, resultHandler: SimModemResultHandler): SimModemCommandChain {
+    // TODO: Segmentation for long messages
     val encodingResult = tryEncodeMessage(message)
 
     val pduBytes = mutableListOf<Byte>()
@@ -79,7 +80,7 @@ class CommandGeneratorAdapter : CommandGeneratorPort {
     return SimModemCommandChain(CommandChainType.SEND_SMS, listOf(
       makeCommand(DEFAULT_TIMEOUT_MS, PREDICATE_ENDS_IN_OK, "AT+CMGF=0\r\n"),
       makeCommand(DEFAULT_TIMEOUT_MS, PREDICATE_PROMPT, "AT+CMGS=${pduBytes.size - smscLength}\r\n"),
-      makeCommand(10 * 1000, PREDICATE_ENDS_IN_OK, "${binaryToHexString(pduBytes.toByteArray())}\u001A")
+      makeCommand(10 * 1000, PREDICATE_ENDS_IN_OK, "${binaryToHexString(pduBytes.toByteArray())}\u001A\r\n")
     ), resultHandler)
   }
 

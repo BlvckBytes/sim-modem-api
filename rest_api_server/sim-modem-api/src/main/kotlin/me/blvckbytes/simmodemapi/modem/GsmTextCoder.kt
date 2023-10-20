@@ -148,8 +148,7 @@ object GsmTextCoder {
         'ü' -> 0x7E // (Small letter u with diaeresis)
         'à' -> 0x7F // (Small letter a with grave accent)
 
-        // TODO: Illegal characters should throw an exception
-        else -> throw IllegalCharacterException(char)
+        else -> throw IllegalCharacterException()
       }
 
       if (gsmCode > 0xFF)

@@ -1,5 +1,6 @@
 package me.blvckbytes.simmodemapi.rest.config
 
+import me.blvckbytes.simmodemapi.modem.IllegalCharacterException
 import org.springframework.beans.TypeMismatchException
 import org.springframework.core.Ordered
 import org.springframework.core.annotation.Order
@@ -82,6 +83,14 @@ class RestExceptionHandler : ResponseEntityExceptionHandler() {
     return ApiError(
       HttpStatus.BAD_REQUEST,
       "The required multipart/form-data key '${exception.requestPartName}' is absent"
+    ).toResponseEntity()
+  }
+
+  @ExceptionHandler(IllegalCharacterException::class)
+  fun handleIllegalCharacterException(exception: IllegalCharacterException): ResponseEntity<Any> {
+    return ApiError(
+      HttpStatus.BAD_REQUEST,
+      "The requested message contained an illegal character"
     ).toResponseEntity()
   }
 
