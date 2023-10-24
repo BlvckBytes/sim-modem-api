@@ -2,12 +2,13 @@ package me.blvckbytes.simmodemapi.modem
 
 import me.blvckbytes.simmodemapi.rest.CommandGeneratorPort
 import org.springframework.stereotype.Component
+import kotlin.math.min
 
 @Component
 class CommandGeneratorAdapter : CommandGeneratorPort {
 
   companion object {
-    private const val DEFAULT_TIMEOUT_MS = 1000
+    private const val DEFAULT_TIMEOUT_MS = 3000
 
     // TODO: This value should be configurable
     private const val MESSAGE_CENTER = "+4365009000000"
@@ -51,37 +52,55 @@ class CommandGeneratorAdapter : CommandGeneratorPort {
     }
   }
 
-  private class MessageEncodingResult(
-    val bytes: ByteArray,
-    val alphabet: PduAlphabet
-  )
-
   override fun forSendingSms(recipient: String, message: String, resultHandler: SimModemResultHandler): SimModemCommandChain {
-    // TODO: Segmentation for long messages
-    val encodingResult = tryEncodeMessage(message)
+    var remainingMessage = message
+    var remainingMessageLength = remainingMessage.length
 
-    val pduBytes = mutableListOf<Byte>()
-    val smscLength = PduHelper.writeSMSC(MESSAGE_CENTER, pduBytes)
+    val messageParts = mutableListOf<Pair<MessageEncodingResult, UserDataHeader>>()
 
-    PduHelper.writeMessageFlags(
-      rejectDuplicates = false,
-      statusReport = true,
-      userDataHeader = false,
-      replyPath = false,
-      pduBytes
-    )
+    messageSegmentor@ while (remainingMessageLength > 0) {
+      for (currentEncoding in PduAlphabet.AVAILABLE_ALPHABETS_ASCENDING) {
+        var currentSubstringLength = min(remainingMessageLength, currentEncoding.maximumCharacters)
+        val header = UserDataHeader()
 
-    PduHelper.writeMessageReferenceNumber(null, pduBytes)
-    PduHelper.writeDestination(recipient, pduBytes)
-    PduHelper.writeProtocolIdentifier(pduBytes)
-    PduHelper.writeDataCodingScheme(encodingResult.alphabet, pduBytes)
-    PduHelper.writeUserData(encodingResult.bytes, pduBytes)
+        // Message would not fit into one part, so a concatenation header is required
+        if (messageParts.size > 0 || currentSubstringLength < remainingMessageLength) {
+          // The number of total messages are not known yet and will be patched later
+          header.addElement(ConcatenatedShortMessage(null, 1, messageParts.size + 1))
+        }
 
-    return SimModemCommandChain(CommandChainType.SEND_SMS, listOf(
-      makeCommand(DEFAULT_TIMEOUT_MS, PREDICATE_ENDS_IN_OK, "AT+CMGF=0\r\n"),
-      makeCommand(DEFAULT_TIMEOUT_MS, PREDICATE_PROMPT, "AT+CMGS=${pduBytes.size - smscLength}\r\n"),
-      makeCommand(10 * 1000, PREDICATE_ENDS_IN_OK, "${binaryToHexString(pduBytes.toByteArray())}\u001A\r\n")
-    ), resultHandler)
+        // The header takes up space of the actual message
+        if (currentSubstringLength == currentEncoding.maximumCharacters)
+          currentSubstringLength -= header.getNumberOfTakenUpCharacters(currentEncoding)
+
+        val currentSubstring = remainingMessage.substring(0, currentSubstringLength)
+        val encodingResult = tryEncodeMessage(currentSubstring, currentEncoding) ?: continue
+
+        remainingMessage = remainingMessage.substring(currentSubstringLength)
+        remainingMessageLength -= currentSubstringLength
+
+        messageParts.add(Pair(encodingResult, header))
+        continue@messageSegmentor
+      }
+
+      throw IllegalCharacterException()
+    }
+
+    val numberOfSegments = messageParts.size
+    val commandList = mutableListOf<SimModemCommand>()
+
+    commandList.add(makeCommand(DEFAULT_TIMEOUT_MS, PREDICATE_ENDS_IN_OK, "AT+CMGF=0\r\n"))
+
+    for (segmentNumber in 1..numberOfSegments) {
+      val (encodingResult, header) = messageParts[segmentNumber - 1]
+
+      // Patch the total part count now that it is known
+      header.getElement(InformationElementIdentifier.CONCATENATED_SHORT_MESSAGE)?.totalNumberOfParts = numberOfSegments
+
+      makeSendSmsSegmentCommands(recipient, encodingResult, header, commandList)
+    }
+
+    return SimModemCommandChain(CommandChainType.SEND_SMS, commandList, resultHandler)
   }
 
   override fun forSignalQuality(resultHandler: SimModemResultHandler): SimModemCommandChain {
@@ -119,12 +138,42 @@ class CommandGeneratorAdapter : CommandGeneratorPort {
     )
   }
 
-  private fun tryEncodeMessage(message: String): MessageEncodingResult {
+  private fun tryEncodeMessage(message: String, alphabet: PduAlphabet): MessageEncodingResult? {
     return try {
-      val messageBytes = GsmTextCoder.encode(message)
-      MessageEncodingResult(PduHelper.packSevenBitCharacters(messageBytes), PduAlphabet.GSM_SEVEN_BIT)
+      MessageEncodingResult(when (alphabet) {
+        PduAlphabet.GSM_SEVEN_BIT -> GsmTextCoder.encode(message)
+        PduAlphabet.UCS2_SIXTEEN_BIT -> UCS2TextCoder.encode(message)
+        else -> throw IllegalStateException("Requested to use an unimplemented alphabet for encoding")
+      }, message.length, alphabet)
     } catch (exception: IllegalCharacterException) {
-      MessageEncodingResult(UCS2TextCoder.encode(message), PduAlphabet.UCS2_SIXTEEN_BIT)
+      null
     }
+  }
+
+  private fun makeSendSmsSegmentCommands(
+    recipient: String,
+    encodingResult: MessageEncodingResult,
+    header: UserDataHeader,
+    commandList: MutableList<SimModemCommand>
+  ) {
+    val pduBytes = mutableListOf<Byte>()
+    val smscLength = PduHelper.writeSMSC(MESSAGE_CENTER, pduBytes)
+
+    PduHelper.writeMessageFlags(
+      rejectDuplicates = false,
+      statusReport = true,
+      userDataHeader = header.getLengthInBytes() > 0,
+      replyPath = false,
+      pduBytes
+    )
+
+    PduHelper.writeMessageReferenceNumber(null, pduBytes)
+    PduHelper.writeDestination(recipient, pduBytes)
+    PduHelper.writeProtocolIdentifier(pduBytes)
+    PduHelper.writeDataCodingScheme(encodingResult.alphabet, pduBytes)
+    PduHelper.writeUserData(encodingResult, header, pduBytes)
+
+    commandList.add(makeCommand(DEFAULT_TIMEOUT_MS, PREDICATE_PROMPT, "AT+CMGS=${pduBytes.size - smscLength}\r\n"))
+    commandList.add(makeCommand(10 * 1000, PREDICATE_ENDS_IN_OK, "${binaryToHexString(pduBytes.toByteArray())}\u001A\r\n"))
   }
 }
