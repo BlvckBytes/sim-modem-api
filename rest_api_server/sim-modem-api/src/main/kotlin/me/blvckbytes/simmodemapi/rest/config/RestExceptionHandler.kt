@@ -1,5 +1,6 @@
 package me.blvckbytes.simmodemapi.rest.config
 
+import com.fasterxml.jackson.databind.exc.InvalidFormatException
 import me.blvckbytes.simmodemapi.modem.IllegalCharacterException
 import me.blvckbytes.simmodemapi.modem.MessageTooLongException
 import org.springframework.beans.TypeMismatchException
@@ -9,6 +10,7 @@ import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
 import org.springframework.http.HttpStatusCode
 import org.springframework.http.ResponseEntity
+import org.springframework.http.converter.HttpMessageNotReadableException
 import org.springframework.validation.FieldError
 import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.annotation.ControllerAdvice
@@ -61,18 +63,29 @@ class RestExceptionHandler : ResponseEntityExceptionHandler() {
     ).toResponseEntity()
   }
 
+  override fun handleHttpMessageNotReadable(
+    exception: HttpMessageNotReadableException,
+    headers: HttpHeaders,
+    status: HttpStatusCode,
+    request: WebRequest
+  ): ResponseEntity<Any>? {
+    val cause = exception.mostSpecificCause
+
+    if (cause is InvalidFormatException) {
+      val fieldName = if (cause.path.size > 0) cause.path[cause.path.size - 1].fieldName else null
+      return createConversionError(cause.value, cause.targetType, fieldName).toResponseEntity()
+    }
+
+    return super.handleHttpMessageNotReadable(exception, headers, status, request)
+  }
+
   override fun handleTypeMismatch(
     exception: TypeMismatchException,
     headers: HttpHeaders,
     status: HttpStatusCode,
     request: WebRequest
   ): ResponseEntity<Any>? {
-    return ApiError(
-      HttpStatus.NOT_FOUND,
-      "Could not convert ${exception.value} into a ${exception.requiredType?.simpleName ?: "?"}${
-        exception.requiredType?.enumConstants?.joinToString(", ", " enum (", ")") ?: ""
-      } for field ${exception.propertyName}"
-    ).toResponseEntity()
+    return createConversionError(exception.value, exception.requiredType, exception.propertyName).toResponseEntity()
   }
 
   override fun handleMissingServletRequestPart(
@@ -118,5 +131,14 @@ class RestExceptionHandler : ResponseEntityExceptionHandler() {
       HttpStatus.INTERNAL_SERVER_ERROR,
       exception.message ?: "There has been no message provided"
     ).toResponseEntity()
+  }
+
+  private fun createConversionError(value: Any?, requiredType: Class<*>?, fieldName: String?): ApiError {
+    return ApiError(
+      HttpStatus.NOT_FOUND,
+      "Could not convert $value into a ${requiredType?.simpleName ?: "?"}${
+        requiredType?.enumConstants?.joinToString(", ", " enum (", ")") ?: ""
+      } for field '${fieldName ?: "unknown field"}'"
+    )
   }
 }
