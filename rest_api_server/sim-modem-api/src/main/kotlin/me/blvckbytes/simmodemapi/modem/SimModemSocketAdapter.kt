@@ -135,7 +135,7 @@ class SimModemSocketAdapter(
       lastHeartbeatSend = 0
       true
     } catch (exception: java.lang.Exception) {
-      logger.error("Could not connect to socket server on ${socketServerHost}:${socketServerPort}", exception)
+      logger.error("Could not connect to socket server on ${socketServerHost}:${socketServerPort}", exception.message)
       false
     }
   }
@@ -164,13 +164,23 @@ class SimModemSocketAdapter(
   private fun executeCommand(command: SimModemCommand): Pair<ExecutionResult, SimModemResponse?> {
     return ensureAvailabilityAndExecute({ Pair(ExecutionResult.UNAVAILABLE, null) }) { availableSocket ->
       val outputStream = availableSocket.getOutputStream()
-      outputStream.write(command.binaryCommand)
-      outputStream.flush()
-      val commandSentStamp = LocalDateTime.now()
+      val inputStream = availableSocket.getInputStream()
+
+      // There could be remainders of previous responses still in the input buffer.
+      // Also, sometimes, the modem seems to make requests on its own, which cause
+      // responses that haven't even been requested by this process.
+      try {
+        availableSocket.soTimeout = 1
+        while (inputStream.read() > 0)
+          continue
+      } catch (ignored: SocketTimeoutException) {}
 
       availableSocket.soTimeout = command.timeoutMs
 
-      val inputStream = availableSocket.getInputStream()
+      outputStream.write(command.binaryCommand)
+      outputStream.flush()
+
+      val commandSentStamp = LocalDateTime.now()
 
       try {
         val buffer = ByteArray(READ_BUFFER_SIZE)
