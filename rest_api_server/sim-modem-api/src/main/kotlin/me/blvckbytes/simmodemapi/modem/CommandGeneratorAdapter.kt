@@ -52,7 +52,13 @@ class CommandGeneratorAdapter : CommandGeneratorPort {
     }
   }
 
-  override fun forSendingSms(recipient: String, message: String, resultHandler: SimModemResultHandler): SimModemCommandChain {
+  override fun forSendingSms(
+    recipient: String,
+    message: String,
+    validityPeriodUnit: ValidityPeriodUnit?,
+    validityPeriodValue: Double,
+    resultHandler: SimModemResultHandler
+  ): SimModemCommandChain {
     var remainingMessage = message
     var remainingMessageLength = remainingMessage.length
 
@@ -106,7 +112,7 @@ class CommandGeneratorAdapter : CommandGeneratorPort {
       // Patch the total part count now that it is known
       header.getElement(InformationElementIdentifier.CONCATENATED_SHORT_MESSAGE)?.totalNumberOfParts = numberOfSegments
 
-      makeSendSmsSegmentCommands(recipient, encodingResult, header, commandList)
+      makeSendSmsSegmentCommands(recipient, validityPeriodUnit, validityPeriodValue, encodingResult, header, commandList)
     }
 
     return SimModemCommandChain(CommandChainType.SEND_SMS, commandList, resultHandler)
@@ -161,6 +167,8 @@ class CommandGeneratorAdapter : CommandGeneratorPort {
 
   private fun makeSendSmsSegmentCommands(
     recipient: String,
+    validityPeriodUnit: ValidityPeriodUnit?,
+    validityPeriodValue: Double,
     encodingResult: MessageEncodingResult,
     header: UserDataHeader,
     commandList: MutableList<SimModemCommand>
@@ -170,6 +178,7 @@ class CommandGeneratorAdapter : CommandGeneratorPort {
 
     PduHelper.writeMessageFlags(
       rejectDuplicates = false,
+      validityPeriod = validityPeriodUnit != null,
       statusReport = true,
       userDataHeader = header.getLengthInBytes() > 0,
       replyPath = false,
@@ -180,7 +189,10 @@ class CommandGeneratorAdapter : CommandGeneratorPort {
     PduHelper.writeDestination(recipient, pduBytes)
     PduHelper.writeProtocolIdentifier(pduBytes)
     PduHelper.writeDataCodingScheme(encodingResult.alphabet, pduBytes)
-    // TODO: Validity period
+
+    if (validityPeriodUnit != null)
+      PduHelper.writeValidityPeriod(validityPeriodUnit, validityPeriodValue, pduBytes)
+
     PduHelper.writeUserData(encodingResult, header, pduBytes)
 
     commandList.add(makeCommand(DEFAULT_TIMEOUT_MS, PREDICATE_PROMPT, "AT+CMGS=${pduBytes.size - smscLength}\r\n"))

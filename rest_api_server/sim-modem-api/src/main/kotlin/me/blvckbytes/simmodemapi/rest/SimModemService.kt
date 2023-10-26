@@ -16,7 +16,15 @@ class SimModemService(
 ) {
 
   fun sendSms(data: SendSmsRequestDto): DeferredResult<ExecutionResponseDto> {
-    return queueChain { commandGenerator.forSendingSms(data.recipient!!, data.message!!, it) }
+    return queueChain {
+      commandGenerator.forSendingSms(
+        data.recipient!!,
+        data.message!!,
+        data.validityPeriodUnit,
+        data.validityPeriodValue ?: 0.0,
+        it
+      )
+    }
   }
 
   fun getSignalQuality(): DeferredResult<ExecutionResponseDto> {

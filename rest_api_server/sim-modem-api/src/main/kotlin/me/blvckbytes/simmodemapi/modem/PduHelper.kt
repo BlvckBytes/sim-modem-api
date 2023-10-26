@@ -32,6 +32,7 @@ object PduHelper {
 
   fun writeMessageFlags(
     rejectDuplicates: Boolean,
+    validityPeriod: Boolean,
     statusReport: Boolean,
     userDataHeader: Boolean,
     replyPath: Boolean,
@@ -65,6 +66,10 @@ object PduHelper {
 
     if (rejectDuplicates)
       flags = flags or 0b00000100
+
+    // Relative validity period (since received by SC), comprised of a single byte
+    if (validityPeriod)
+      flags = flags or 0b00010000
 
     if (statusReport)
       flags = flags or 0b00100000
@@ -122,6 +127,39 @@ object PduHelper {
       11 Reserved
      */
     output.add((0b00010001 or alphabet.bitPattern).toByte())
+    return 1
+  }
+
+  fun writeValidityPeriod(
+    unit: ValidityPeriodUnit,
+    value: Double,
+    output: MutableList<Byte>
+  ): Int {
+    /*
+      This byte indicates for how long this message is still valid to deliver to the
+      recipient, relative to when the SC received it.
+
+      TP-VP value  Validity period value
+      0 to 143     (TP-VP + 1) x 5 minutes (i.e. 5 minutes intervals up to 12 hours)
+      144 to 167   12 hours + ((TP-VP -143) x 30 minutes)
+      168 to 196   (TP-VP - 166) x 1 day
+      197 to 255   (TP-VP - 192) x 1 week
+
+      =>
+
+      0-143: 5, 10, 15, ... 715, 720 (12h)
+      144-167: 12.5h, 13h, 13.5h, ... 23.5h, 24h
+      168-196: 2d, 3d, 4d, ... 29d, 30d
+      197-255: 5w, 6w, 7w, ..., 62w, 63w
+     */
+
+    output.add(when (unit) {
+      ValidityPeriodUnit.MINUTES -> (value / 5) - 1
+      ValidityPeriodUnit.HOURS -> (value - 12) * 2 + 143
+      ValidityPeriodUnit.DAYS -> (value + 166).toInt()
+      ValidityPeriodUnit.WEEKS -> (value + 192).toInt()
+    }.toByte())
+
     return 1
   }
 
