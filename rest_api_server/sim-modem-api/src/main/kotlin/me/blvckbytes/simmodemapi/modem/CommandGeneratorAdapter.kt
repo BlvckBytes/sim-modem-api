@@ -59,6 +59,15 @@ class CommandGeneratorAdapter : CommandGeneratorPort {
     val messageParts = mutableListOf<Pair<MessageEncodingResult, UserDataHeader>>()
 
     messageSegmentor@ while (remainingMessageLength > 0) {
+
+      // There's only one byte available for message part numbers with
+      // the currently used information element, which should be more than plenty anyways
+      if (messageParts.size >= 0xFF) {
+        throw MessageTooLongException(messageParts.fold(0) { accumulator, current ->
+          accumulator + current.first.numberOfCharacters
+        })
+      }
+
       for (currentEncoding in PduAlphabet.AVAILABLE_ALPHABETS_ASCENDING) {
         var currentSubstringLength = min(remainingMessageLength, currentEncoding.maximumCharacters)
         val header = UserDataHeader()
@@ -171,6 +180,7 @@ class CommandGeneratorAdapter : CommandGeneratorPort {
     PduHelper.writeDestination(recipient, pduBytes)
     PduHelper.writeProtocolIdentifier(pduBytes)
     PduHelper.writeDataCodingScheme(encodingResult.alphabet, pduBytes)
+    // TODO: Validity period
     PduHelper.writeUserData(encodingResult, header, pduBytes)
 
     commandList.add(makeCommand(DEFAULT_TIMEOUT_MS, PREDICATE_PROMPT, "AT+CMGS=${pduBytes.size - smscLength}\r\n"))

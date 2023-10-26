@@ -1,6 +1,7 @@
 package me.blvckbytes.simmodemapi.rest.config
 
 import me.blvckbytes.simmodemapi.modem.IllegalCharacterException
+import me.blvckbytes.simmodemapi.modem.MessageTooLongException
 import org.springframework.beans.TypeMismatchException
 import org.springframework.core.Ordered
 import org.springframework.core.annotation.Order
@@ -91,6 +92,15 @@ class RestExceptionHandler : ResponseEntityExceptionHandler() {
     return ApiError(
       HttpStatus.BAD_REQUEST,
       "The requested message contained an illegal character"
+    ).toResponseEntity()
+  }
+
+  @ExceptionHandler(MessageTooLongException::class)
+  fun handleMessageTooLongException(exception: MessageTooLongException): ResponseEntity<Any> {
+    return ApiError(
+      HttpStatus.BAD_REQUEST,
+      "The requested message was too long. With this character encoding constellation, " +
+      "the message would have to be cut after ${exception.maximumCharacterLength} characters."
     ).toResponseEntity()
   }
 
