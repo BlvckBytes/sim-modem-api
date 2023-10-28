@@ -3,7 +3,7 @@ package me.blvckbytes.simmodemapi.modem
 import me.blvckbytes.simmodemapi.domain.PduAlphabet
 import me.blvckbytes.simmodemapi.domain.ValidityPeriodUnit
 
-object PduHelper {
+object PDUWriteHelper {
 
   private class PhoneNumberWriteResult(
     val characterLengthWithPadding: Int,

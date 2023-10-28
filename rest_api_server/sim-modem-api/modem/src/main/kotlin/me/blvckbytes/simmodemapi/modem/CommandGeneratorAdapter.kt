@@ -170,9 +170,9 @@ class CommandGeneratorAdapter : CommandGeneratorPort {
     commandList: MutableList<SimModemCommand>
   ) {
     val pduBytes = mutableListOf<Byte>()
-    val smscLength = PduHelper.writeSMSC(MESSAGE_CENTER, pduBytes)
+    val smscLength = PDUWriteHelper.writeSMSC(MESSAGE_CENTER, pduBytes)
 
-    PduHelper.writeMessageFlags(
+    PDUWriteHelper.writeMessageFlags(
       rejectDuplicates = false,
       validityPeriod = validityPeriodUnit != null,
       statusReport = true,
@@ -181,15 +181,15 @@ class CommandGeneratorAdapter : CommandGeneratorPort {
       pduBytes
     )
 
-    PduHelper.writeMessageReferenceNumber(null, pduBytes)
-    PduHelper.writeDestination(recipient, pduBytes)
-    PduHelper.writeProtocolIdentifier(pduBytes)
-    PduHelper.writeDataCodingScheme(encodingResult.alphabet, pduBytes)
+    PDUWriteHelper.writeMessageReferenceNumber(null, pduBytes)
+    PDUWriteHelper.writeDestination(recipient, pduBytes)
+    PDUWriteHelper.writeProtocolIdentifier(pduBytes)
+    PDUWriteHelper.writeDataCodingScheme(encodingResult.alphabet, pduBytes)
 
     if (validityPeriodUnit != null)
-      PduHelper.writeValidityPeriod(validityPeriodUnit, validityPeriodValue, pduBytes)
+      PDUWriteHelper.writeValidityPeriod(validityPeriodUnit, validityPeriodValue, pduBytes)
 
-    PduHelper.writeUserData(encodingResult, header, pduBytes)
+    PDUWriteHelper.writeUserData(encodingResult, header, pduBytes)
 
     commandList.add(makeCommand(DEFAULT_TIMEOUT_MS, PREDICATE_PROMPT, "AT+CMGS=${pduBytes.size - smscLength}\r\n"))
     commandList.add(makeCommand(10 * 1000, PREDICATE_ENDS_IN_OK, "${BinaryUtils.binaryToHexString(pduBytes.toByteArray())}\u001A\r\n"))
