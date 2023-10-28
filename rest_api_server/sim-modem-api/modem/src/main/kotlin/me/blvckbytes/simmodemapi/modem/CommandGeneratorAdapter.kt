@@ -176,11 +176,11 @@ class CommandGeneratorAdapter : CommandGeneratorPort {
     val smscLength = PDUWriteHelper.writeSMSC(MESSAGE_CENTER, pduBytes)
 
     PDUWriteHelper.writeMessageFlags(
-      rejectDuplicates = false,
+      rejectDuplicates = false, // TODO: Research the purpose of this flag
       validityPeriod = validityPeriodUnit != null,
       statusReport = true,
       userDataHeader = header.getLengthInBytes() > 0,
-      replyPath = false,
+      replyPath = false, // TODO: Research the purpose of this flag
       pduBytes
     )
 

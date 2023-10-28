@@ -7,6 +7,10 @@ class UserDataHeader {
 
   private val elementByType = mutableMapOf<InformationElementIdentifier<*>, InformationElement>()
 
+  fun getElements(): Collection<InformationElement> {
+    return elementByType.values
+  }
+
   fun addElement(element: InformationElement) {
     elementByType[element.getType()] = element
   }
@@ -15,6 +19,8 @@ class UserDataHeader {
     val element = elementByType[type] ?: return null
     return type.wrapperClass.cast(element)
   }
+
+  // TODO: R/W should not be done in the domain
 
   fun write(output: MutableList<Byte>): Int {
     if (elementByType.isEmpty())

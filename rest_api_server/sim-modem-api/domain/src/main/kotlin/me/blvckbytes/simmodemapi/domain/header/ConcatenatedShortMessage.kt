@@ -26,4 +26,8 @@ class ConcatenatedShortMessage(
   override fun getType(): InformationElementIdentifier<*> {
     return InformationElementIdentifier.CONCATENATED_SHORT_MESSAGE
   }
+
+  override fun toString(): String {
+    return "ConcatenatedShortMessage(messageReferenceNumber=$messageReferenceNumber, totalNumberOfParts=$totalNumberOfParts, sequenceNumberOfThisPart=$sequenceNumberOfThisPart)"
+  }
 }
