@@ -13,11 +13,26 @@ object PDUReadHelper {
       val messageFlags = parseMessageFlags(direction, reader)
       val messageReferenceNumber = parseMessageReferenceNumber(reader)
       val destinationAddress = parseDestination(reader)
+      val protocolIdentifier = parseProtocolIdentifier(reader)
+      val dcsFlags = BinaryDCSFlag.fromDCSValue(reader.readInt())
 
-      return PDU(smsc, messageFlags, messageReferenceNumber, destinationAddress)
+      return PDU(
+        smsc,
+        messageFlags,
+        messageReferenceNumber,
+        destinationAddress,
+        protocolIdentifier,
+        dcsFlags
+      )
     } catch (exception: EndOfByteArrayException) {
       throw InvalidPduException(PduInvalidityReason.SHORTER_THAN_EXPECTED)
     }
+  }
+
+  private fun parseProtocolIdentifier(reader: ByteArrayReader): Int {
+    // Note that for the straightforward case of simple MS-to-SC short message transfer the Protocol
+    // Identifier is set to the value 0.
+    return reader.readInt()
   }
 
   private fun parseDestination(reader: ByteArrayReader): PhoneNumber {
@@ -128,4 +143,6 @@ object PDUReadHelper {
 //  println("messageReferenceNumber=${pdu.messageReferenceNumber}")
 //  println("destination.type=${pdu.destination.type}")
 //  println("destination.number=${pdu.destination.number}")
+//  println("protocolIdentifier=${pdu.protocolIdentifier}")
+//  println("dcsFlags=${pdu.dcsFlags.joinToString()}")
 //}
