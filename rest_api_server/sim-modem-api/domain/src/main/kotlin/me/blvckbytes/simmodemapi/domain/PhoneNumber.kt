@@ -1,6 +1,6 @@
 package me.blvckbytes.simmodemapi.domain
 
-class SMSCenter(
+class PhoneNumber(
   val typeOfAddress: Int,
   val phoneNumber: String
 )

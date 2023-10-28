@@ -11,11 +11,21 @@ object PDUReadHelper {
       val reader = ByteArrayReader(data)
       val smsc = parseSmsc(reader)
       val messageFlags = parseMessageFlags(direction, reader)
+      val messageReferenceNumber = parseMessageReferenceNumber(reader)
 
-      return PDU(smsc, messageFlags)
+      return PDU(smsc, messageFlags, messageReferenceNumber)
     } catch (exception: EndOfByteArrayException) {
       throw InvalidPduException(PduInvalidityReason.SHORTER_THAN_EXPECTED)
     }
+  }
+
+  private fun parseMessageReferenceNumber(reader: ByteArrayReader): Int? {
+    val number = reader.readInt()
+
+    if (number == 0)
+      return null
+
+    return number
   }
 
   private fun parseMessageFlags(direction: PDUDirection, reader: ByteArrayReader): MessageFlags {
@@ -37,7 +47,7 @@ object PDUReadHelper {
     return MessageFlags(messageType, validityPeriodFormat, binaryMessageFlags)
   }
 
-  private fun parseSmsc(reader: ByteArrayReader): SMSCenter? {
+  private fun parseSmsc(reader: ByteArrayReader): PhoneNumber? {
     val smscLength = reader.readInt()
 
     if (smscLength == 0)
@@ -78,7 +88,7 @@ object PDUReadHelper {
       smscNumberBuilder.append(firstCharacter)
     }
 
-    return SMSCenter(smscTypeOfAddress, smscNumberBuilder.toString())
+    return PhoneNumber(smscTypeOfAddress, smscNumberBuilder.toString())
   }
 }
 
@@ -90,4 +100,5 @@ object PDUReadHelper {
 //  println("messageFlags.messageType=${pdu.messageFlags.messageType}")
 //  println("messageFlags.validityPeriodFormat=${pdu.messageFlags.validityPeriodFormat}")
 //  println("messageFlags.binaryFlags=${pdu.messageFlags.binaryFlags.joinToString()}")
+//  println("messageReferenceNumber=${pdu.messageReferenceNumber}")
 //}
