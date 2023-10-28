@@ -1,4 +1,4 @@
-package me.blvckbytes.simmodemapi.modem
+package me.blvckbytes.simmodemapi.domain.header
 
 class ConcatenatedShortMessage(
   var messageReferenceNumber: Int?,
@@ -12,7 +12,7 @@ class ConcatenatedShortMessage(
   }
 
   override fun write(output: MutableList<Byte>) {
-    output.add(InformationElementIdentifier.CONCATENATED_SHORT_MESSAGE.identifier)
+    output.add(InformationElementIdentifier.CONCATENATED_SHORT_MESSAGE.identifier.toByte())
     output.add(3)
     output.add((messageReferenceNumber ?: 0).toByte())
     output.add(totalNumberOfParts.toByte())

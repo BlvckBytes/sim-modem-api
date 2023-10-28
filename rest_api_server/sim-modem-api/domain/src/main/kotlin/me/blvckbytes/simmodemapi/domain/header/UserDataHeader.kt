@@ -1,4 +1,4 @@
-package me.blvckbytes.simmodemapi.modem
+package me.blvckbytes.simmodemapi.domain.header
 
 import me.blvckbytes.simmodemapi.domain.PduAlphabet
 import kotlin.reflect.cast

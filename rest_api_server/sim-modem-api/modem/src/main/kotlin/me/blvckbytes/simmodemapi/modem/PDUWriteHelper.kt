@@ -2,6 +2,7 @@ package me.blvckbytes.simmodemapi.modem
 
 import me.blvckbytes.simmodemapi.domain.PduAlphabet
 import me.blvckbytes.simmodemapi.domain.ValidityPeriodUnit
+import me.blvckbytes.simmodemapi.domain.header.UserDataHeader
 
 object PDUWriteHelper {
 

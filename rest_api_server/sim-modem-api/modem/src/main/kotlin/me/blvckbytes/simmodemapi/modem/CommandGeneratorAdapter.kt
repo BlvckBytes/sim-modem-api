@@ -3,6 +3,9 @@ package me.blvckbytes.simmodemapi.modem
 import me.blvckbytes.simmodemapi.domain.*
 import me.blvckbytes.simmodemapi.domain.exception.IllegalCharacterException
 import me.blvckbytes.simmodemapi.domain.exception.MessageTooLongException
+import me.blvckbytes.simmodemapi.domain.header.ConcatenatedShortMessage
+import me.blvckbytes.simmodemapi.domain.header.InformationElementIdentifier
+import me.blvckbytes.simmodemapi.domain.header.UserDataHeader
 import me.blvckbytes.simmodemapi.domain.port.CommandGeneratorPort
 import org.springframework.stereotype.Component
 import kotlin.math.min
