@@ -1,6 +1,6 @@
 package me.blvckbytes.simmodemapi.domain
 
 class PhoneNumber(
-  val typeOfAddress: Int,
-  val phoneNumber: String
+  val type: Int,
+  val number: String
 )
