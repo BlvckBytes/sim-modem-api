@@ -8,4 +8,8 @@ object BinaryUtils {
       result.append("%02X".format(byte))
     return result.toString()
   }
+
+  fun setBits(destination: Int, source: Int, bitmask: Int): Int {
+    TODO()
+  }
 }
