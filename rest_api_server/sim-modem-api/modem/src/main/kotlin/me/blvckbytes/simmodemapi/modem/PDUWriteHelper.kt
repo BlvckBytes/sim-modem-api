@@ -347,16 +347,55 @@ object PDUWriteHelper {
      */
     var paddedPhoneNumber = phoneNumber
 
+    // Prefix or escape digits shall not be included
     if (paddedPhoneNumber.startsWith("+"))
       paddedPhoneNumber = paddedPhoneNumber.substring(1)
 
     val needsPadding = paddedPhoneNumber.length % 2 != 0
 
+    /*
+      If the Address contains an odd number of digits, bits 5 to 8 of the last
+      octet shall be filled with an end mark coded as "1111".
+     */
     if (needsPadding)
       paddedPhoneNumber += "F"
 
     paddedPhoneNumber.chunked(2).forEach {
-      output.add(it.reversed().toInt(16).toByte())
+      output.add(
+        it
+          /*
+            The number digit(s) in octet 1 precedes the digit(s) in octet 2 etc.
+            The number digit which would be entered first is located in octet 1, bits 1 to 4.
+
+            => Octets are in entering order, but each octet contains two digits, and
+               those digits are swapped.
+           */
+          .reversed()
+
+          /*
+            Each digit is encoded to a BCD-nibble, as follows:
+            0000 0
+            0001 1
+            0010 2
+            0011 3
+            0100 4
+            0101 5
+            0110 6
+            0111 7
+            1000 8
+            1001 9
+            1010 *
+            1011 #
+            1100 a
+            1101 b
+            1110 c
+            1111 Used as an end-mark in the case of an odd number of digits
+
+            NOTE: For now, *,#,a,b,c are unsupported.
+           */
+          .toInt(16)
+          .toByte()
+      )
     }
 
     return PhoneNumberWriteResult(
