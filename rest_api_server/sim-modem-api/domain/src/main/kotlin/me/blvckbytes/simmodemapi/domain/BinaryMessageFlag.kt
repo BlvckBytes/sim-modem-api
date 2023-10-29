@@ -67,7 +67,14 @@ enum class BinaryMessageFlag(
   HAS_USER_DATA_HEADER    (0b0_1_000000, 0b0_1_000000, MessageType.SMS_SUBMIT, MessageType.SMS_DELIVER),
 
   /*
-    The TP-Reply-Path is a 1-bit field, located within bit no 7 of the first octet of both SMS-DELIVER and SMS-SUBMIT, and to be given the following values:
+    The TP-Reply-Path is a 1-bit field, located within bit no 7 of the first octet of both SMS-DELIVER and
+    SMS-SUBMIT, and to be given the following values:
+
+    0 TP-Reply-Path parameter is not set in this SMS-SUBMIT/DELIVER
+    1 TP-Reply-Path parameter is set in this SMS-SUBMIT/DELIVER
+
+    SMS_DELIVER: Parameter indicating that Reply Path exists.
+    SMS_SUBMIT: Parameter indicating the request for Reply Path.
    */
   REPLY_PATH              (0b1_0000000, 0b1_0000000, MessageType.SMS_DELIVER, MessageType.SMS_SUBMIT)
   ;
