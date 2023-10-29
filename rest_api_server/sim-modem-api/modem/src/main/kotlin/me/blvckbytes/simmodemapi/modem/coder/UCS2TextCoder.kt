@@ -1,4 +1,4 @@
-package me.blvckbytes.simmodemapi.modem
+package me.blvckbytes.simmodemapi.modem.coder
 
 import me.blvckbytes.simmodemapi.domain.exception.IllegalCharacterException
 import java.nio.ByteBuffer

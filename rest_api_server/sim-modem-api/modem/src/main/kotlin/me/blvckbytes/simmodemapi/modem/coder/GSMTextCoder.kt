@@ -1,8 +1,8 @@
-package me.blvckbytes.simmodemapi.modem
+package me.blvckbytes.simmodemapi.modem.coder
 
 import me.blvckbytes.simmodemapi.domain.exception.IllegalCharacterException
 
-object GsmTextCoder {
+object GSMTextCoder {
 
   fun encode(value: String): ByteArray {
     // Worst case: Each character needs two bytes for encoding

@@ -7,6 +7,9 @@ import me.blvckbytes.simmodemapi.domain.header.ConcatenatedShortMessage
 import me.blvckbytes.simmodemapi.domain.header.InformationElementIdentifier
 import me.blvckbytes.simmodemapi.domain.header.UserDataHeader
 import me.blvckbytes.simmodemapi.domain.port.CommandGeneratorPort
+import me.blvckbytes.simmodemapi.modem.coder.ASCIITextCoder
+import me.blvckbytes.simmodemapi.modem.coder.GSMTextCoder
+import me.blvckbytes.simmodemapi.modem.coder.UCS2TextCoder
 import org.springframework.stereotype.Component
 import kotlin.math.min
 
@@ -167,7 +170,7 @@ class CommandGeneratorAdapter : CommandGeneratorPort {
     command: String
   ): SimModemCommand {
     return SimModemCommand(
-      AsciiTextCoder.encode(command),
+      ASCIITextCoder.encode(command),
       substituteUnprintableAscii(command),
       timeoutMs,
       responsePredicate
@@ -177,7 +180,7 @@ class CommandGeneratorAdapter : CommandGeneratorPort {
   private fun tryEncodeMessage(message: String, alphabet: PduAlphabet): MessageEncodingResult? {
     return try {
       MessageEncodingResult(when (alphabet) {
-        PduAlphabet.GSM_SEVEN_BIT -> GsmTextCoder.encode(message)
+        PduAlphabet.GSM_SEVEN_BIT -> GSMTextCoder.encode(message)
         PduAlphabet.UCS2_SIXTEEN_BIT -> UCS2TextCoder.encode(message)
         else -> throw IllegalStateException("Requested to use an unimplemented alphabet for encoding")
       }, message.length, alphabet)

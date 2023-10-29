@@ -6,6 +6,8 @@ import me.blvckbytes.simmodemapi.domain.exception.PduInvalidityReason
 import me.blvckbytes.simmodemapi.domain.header.ConcatenatedShortMessage
 import me.blvckbytes.simmodemapi.domain.header.InformationElementIdentifier
 import me.blvckbytes.simmodemapi.domain.header.UserDataHeader
+import me.blvckbytes.simmodemapi.modem.coder.GSMTextCoder
+import me.blvckbytes.simmodemapi.modem.coder.UCS2TextCoder
 import java.util.EnumSet
 
 object PDUReadHelper {
@@ -160,7 +162,7 @@ object PDUReadHelper {
 
       return Pair(
         header,
-        GsmTextCoder.decode(unpackedMessageBytes)
+        GSMTextCoder.decode(unpackedMessageBytes)
           ?: throw InvalidPduException(PduInvalidityReason.INVALID_MESSAGE)
       )
     }
