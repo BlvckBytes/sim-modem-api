@@ -10,6 +10,8 @@ class PDU(
   val destination: PhoneNumber,
   val protocolIdentifier: Int,
   val dcsFlags: EnumSet<BinaryDCSFlag>,
+  val validityPeriodUnit: ValidityPeriodUnit?,
+  val validityPeriodValue: Double,
   val header: UserDataHeader?,
   val message: String
 )

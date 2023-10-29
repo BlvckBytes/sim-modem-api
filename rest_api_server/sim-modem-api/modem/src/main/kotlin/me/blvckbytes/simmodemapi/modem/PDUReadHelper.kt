@@ -21,6 +21,7 @@ object PDUReadHelper {
       val destinationAddress = parseDestination(reader)
       val protocolIdentifier = parseProtocolIdentifier(reader)
       val dcsFlags = BinaryDCSFlag.fromDCSValue(reader.readInt())
+      val (validityPeriodUnit, validityPeriodValue) = parseValidityPeriod(messageFlags, reader)
       val (header, message) = parseUserData(messageFlags, dcsFlags, reader)
 
       return PDU(
@@ -30,12 +31,46 @@ object PDUReadHelper {
         destinationAddress,
         protocolIdentifier,
         dcsFlags,
+        validityPeriodUnit,
+        validityPeriodValue,
         header,
         message
       )
     } catch (exception: EndOfByteArrayException) {
       throw InvalidPduException(PduInvalidityReason.SHORTER_THAN_EXPECTED)
     }
+  }
+
+  private fun parseValidityPeriod(messageFlags: MessageFlags, reader: ByteArrayReader): Pair<ValidityPeriodUnit?, Double> {
+    if (messageFlags.validityPeriodFormat == null || messageFlags.validityPeriodFormat == ValidityPeriodFormat.NOT_PRESENT)
+      return Pair(null, 0.0)
+
+    if (messageFlags.validityPeriodFormat == ValidityPeriodFormat.RELATIVE_INTEGER) {
+      val value = reader.readInt()
+
+      /*
+        0 to 143     (TP-VP + 1) x 5 minutes (i.e. 5 minutes intervals up to 12 hours)
+        144 to 167   12 hours + ((TP-VP -143) x 30 minutes)
+        168 to 196   (TP-VP - 166) x 1 day
+        197 to 255   (TP-VP - 192) x 1 week
+       */
+
+      if (value <= 143)
+        return Pair(ValidityPeriodUnit.MINUTES, (value + 1) * 5.0)
+
+      if (value <= 167)
+        return Pair(ValidityPeriodUnit.HOURS, 12 + (value - 143) * .5)
+
+      if (value <= 196)
+        return Pair(ValidityPeriodUnit.DAYS, (value - 166).toDouble())
+
+      if (value <= 255)
+        return Pair(ValidityPeriodUnit.WEEKS, (value - 192).toDouble())
+
+      throw IllegalStateException("Validity period out of range: $value")
+    }
+
+    throw NotImplementedError("Unimplemented validity period format encountered: ${messageFlags.validityPeriodFormat}")
   }
 
   private fun parseUserData(
