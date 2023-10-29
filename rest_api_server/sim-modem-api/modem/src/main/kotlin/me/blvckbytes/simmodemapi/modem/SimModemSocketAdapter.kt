@@ -159,7 +159,6 @@ class SimModemSocketAdapter(
     return try {
       executor.invoke(socket!!)
     } catch (exception: SocketException) {
-      // TODO: Should there be a check against the exception message "Broken pipe"?
       // Force reconnect
       socket = null
       ensureAvailabilityAndExecute(unavailabilityReturnSupplier, executor)
