@@ -18,9 +18,15 @@ class PduValidator(direction: PDUDirection, text: String) {
     return this
   }
 
-  fun assertSMSCPresent(number: String, type: Int): PduValidator {
-    assertEquals(number, pdu.smsCenter?.number)
-    assertEquals(type, pdu.smsCenter?.type)
+  fun assertSMSCPresent(number: String, vararg types: BinaryTypeOfAddressFlag): PduValidator {
+    assertNotNull(pdu.smsCenter)
+    assertEquals(number, pdu.smsCenter!!.number)
+
+    ensureContainsExact(
+      types.size, types::iterator,
+      pdu.smsCenter!!.type.size, pdu.smsCenter!!.type::iterator,
+    ) { a, b -> a == b }
+
     return this
   }
 
@@ -39,9 +45,14 @@ class PduValidator(direction: PDUDirection, text: String) {
     return this
   }
 
-  fun assertDestination(number: String, type: Int): PduValidator {
+  fun assertDestination(number: String, vararg types: BinaryTypeOfAddressFlag): PduValidator {
     assertEquals(number, pdu.destination.number)
-    assertEquals(type, pdu.destination.type)
+
+    ensureContainsExact(
+      types.size, types::iterator,
+      pdu.destination.type.size, pdu.destination.type::iterator,
+    ) { a, b -> a == b }
+
     return this
   }
 

@@ -18,10 +18,16 @@ class PDUReadHelperTests {
       14 # 14 units long message
       93A283D0795C3F33C88FE06CDCB6E32885EC6D341EDF27C1E3E97E72E
     """)
-      .assertSMSCPresent("85290000000", 0x91)
+      .assertSMSCPresent(
+        "85290000000",
+        BinaryTypeOfAddressFlag.TYPE_INTERNATIONAL, BinaryTypeOfAddressFlag.NUMBERING_PLAN_ISDN
+      )
       .assertMessageType(MessageType.SMS_SUBMIT)
       .assertMessageReferenceNumberAbsent()
-      .assertDestination("85291234567", 0x91)
+      .assertDestination(
+        "85291234567",
+        BinaryTypeOfAddressFlag.TYPE_INTERNATIONAL, BinaryTypeOfAddressFlag.NUMBERING_PLAN_ISDN
+      )
       .assertProtocolIdentifier(0x00)
       .assertValidityPeriodFormatPresent(ValidityPeriodFormat.NOT_PRESENT)
       .assertMessageFlagsExact()
@@ -46,7 +52,10 @@ class PDUReadHelperTests {
       .assertSMSCAbsent()
       .assertMessageType(MessageType.SMS_SUBMIT)
       .assertMessageReferenceNumberAbsent()
-      .assertDestination("85291234567", 0x91)
+      .assertDestination(
+        "85291234567",
+        BinaryTypeOfAddressFlag.TYPE_INTERNATIONAL, BinaryTypeOfAddressFlag.NUMBERING_PLAN_ISDN
+      )
       .assertProtocolIdentifier(0x00)
       .assertValidityPeriodFormatPresent(ValidityPeriodFormat.NOT_PRESENT)
       .assertMessageFlagsExact()
@@ -84,11 +93,17 @@ class PDUReadHelperTests {
 
     pduValues.forEachIndexed { index, pduValue ->
       PduValidator(PDUDirection.MS_TO_SC, pduValue)
-        .assertSMSCPresent("4365009000000", 0x91)
+        .assertSMSCPresent(
+          "4365009000000",
+          BinaryTypeOfAddressFlag.TYPE_INTERNATIONAL, BinaryTypeOfAddressFlag.NUMBERING_PLAN_ISDN
+        )
         .assertMessageType(MessageType.SMS_SUBMIT)
         .assertMessageFlagsExact(BinaryMessageFlag.HAS_USER_DATA_HEADER, BinaryMessageFlag.STATUS_REPORT_REQUEST)
         .assertMessageReferenceNumberAbsent()
-        .assertDestination("4312345678901", 0x91)
+        .assertDestination(
+          "4312345678901",
+          BinaryTypeOfAddressFlag.TYPE_INTERNATIONAL, BinaryTypeOfAddressFlag.NUMBERING_PLAN_ISDN
+        )
         .assertProtocolIdentifier(0x00)
         .assertDCSFlagsExact(BinaryDCSFlag.SEVEN_BIT_GSM_ALPHABET, BinaryDCSFlag.MESSAGE_CLASS_1)
         .assertValidityPeriodFormatPresent(ValidityPeriodFormat.RELATIVE_INTEGER)

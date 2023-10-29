@@ -1,6 +1,8 @@
 package me.blvckbytes.simmodemapi.domain
 
+import java.util.EnumSet
+
 class PhoneNumber(
-  val type: Int,
+  val type: EnumSet<BinaryTypeOfAddressFlag>,
   val number: String
 )

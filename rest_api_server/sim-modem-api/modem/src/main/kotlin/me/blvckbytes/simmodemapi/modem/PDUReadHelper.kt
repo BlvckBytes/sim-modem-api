@@ -246,14 +246,14 @@ object PDUReadHelper {
   private fun parseDestination(reader: ByteArrayReader): PhoneNumber {
     // Length (number of characters) without TON (Type Of Number) field
     var length = reader.readInt()
-    val type = reader.readInt()
+    val typeValue = reader.readInt()
 
     // The length specified doesn't include the padding character
     if (length % 2 != 0)
       ++length
 
     return PhoneNumber(
-      type,
+      BinaryTypeOfAddressFlag.fromTypeOfAddressValue(typeValue),
       parsePhoneNumber(length / 2, PduInvalidityReason.MALFORMED_DESTINATION_NUMBER, reader)
     )
   }
@@ -325,11 +325,11 @@ object PDUReadHelper {
     if (smscLength == 0)
       return null
 
-    val smscTypeOfAddress = reader.readInt()
+    val smscTypeValue = reader.readInt()
     val smscNumberLength = smscLength - 1
 
     return PhoneNumber(
-      smscTypeOfAddress,
+      BinaryTypeOfAddressFlag.fromTypeOfAddressValue(smscTypeValue),
       parsePhoneNumber(smscNumberLength, PduInvalidityReason.MALFORMED_SMSC_NUMBER, reader)
     )
   }
