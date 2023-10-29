@@ -11,18 +11,6 @@ class ConcatenatedShortMessage(
       throw IllegalStateException("Value zero is reserved, please use NULL for auto-generation")
   }
 
-  override fun write(output: MutableList<Byte>) {
-    output.add(InformationElementIdentifier.CONCATENATED_SHORT_MESSAGE.identifier.toByte())
-    output.add(3)
-    output.add((messageReferenceNumber ?: 0).toByte())
-    output.add(totalNumberOfParts.toByte())
-    output.add(sequenceNumberOfThisPart.toByte())
-  }
-
-  override fun getLengthInBytes(): Int {
-    return 5
-  }
-
   override fun getType(): InformationElementIdentifier<*> {
     return InformationElementIdentifier.CONCATENATED_SHORT_MESSAGE
   }

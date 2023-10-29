@@ -85,7 +85,7 @@ class CommandGeneratorAdapter : CommandGeneratorPort {
 
         // The header takes up space of the actual message
         if (currentSubstringLength == currentEncoding.maximumCharacters)
-          currentSubstringLength -= header.getNumberOfTakenUpCharacters(currentEncoding)
+          currentSubstringLength -= getNumberOfTakenUpCharacters(header, currentEncoding)
 
         val currentSubstring = remainingMessage.substring(0, currentSubstringLength)
         val encodingResult = tryEncodeMessage(currentSubstring, currentEncoding) ?: continue
@@ -139,6 +139,28 @@ class CommandGeneratorAdapter : CommandGeneratorPort {
     return SimModemCommandChain(CommandChainType.CUSTOM_COMMAND, listOf(command), resultHandler)
   }
 
+  private fun getNumberOfTakenUpCharacters(header: UserDataHeader, alphabet: PduAlphabet): Int {
+    if (header.elements.isEmpty())
+      return 0
+
+    // Length indicator byte
+    var byteLength = 1
+
+    for (element in header.elements) {
+      byteLength += when (element) {
+        is ConcatenatedShortMessage -> 5
+        else -> throw IllegalStateException("Unimplemented element ${element.getType().identifier}")
+      }
+    }
+
+    return when (alphabet) {
+      PduAlphabet.GSM_SEVEN_BIT -> (byteLength * 8 + (7 - 1)) / 7
+      PduAlphabet.EIGHT_BIT -> byteLength
+      PduAlphabet.UCS2_SIXTEEN_BIT -> (byteLength * 8 + (16 - 1)) / 16
+      else -> throw IllegalStateException("Unsupported alphabet")
+    }
+  }
+
   private fun makeCommand(
     timeoutMs: Int,
     responsePredicate: ResponsePredicate?,
@@ -179,7 +201,7 @@ class CommandGeneratorAdapter : CommandGeneratorPort {
       rejectDuplicates = false, // TODO: Research the purpose of this flag
       validityPeriod = validityPeriodUnit != null,
       statusReport = true,
-      userDataHeader = header.getLengthInBytes() > 0,
+      userDataHeader = header.elements.isNotEmpty(),
       replyPath = false, // TODO: Research the purpose of this flag
       pduBytes
     )

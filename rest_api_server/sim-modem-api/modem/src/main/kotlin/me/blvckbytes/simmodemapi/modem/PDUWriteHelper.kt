@@ -3,6 +3,8 @@ package me.blvckbytes.simmodemapi.modem
 import me.blvckbytes.simmodemapi.domain.BinaryUtils
 import me.blvckbytes.simmodemapi.domain.PduAlphabet
 import me.blvckbytes.simmodemapi.domain.ValidityPeriodUnit
+import me.blvckbytes.simmodemapi.domain.header.ConcatenatedShortMessage
+import me.blvckbytes.simmodemapi.domain.header.InformationElementIdentifier
 import me.blvckbytes.simmodemapi.domain.header.UserDataHeader
 
 object PDUWriteHelper {
@@ -168,6 +170,36 @@ object PDUWriteHelper {
     return 1
   }
 
+  private fun writeUserDataHeader(
+    header: UserDataHeader,
+    output: MutableList<Byte>
+  ): Int {
+    val elements = header.elements
+
+    if (elements.isEmpty())
+      return 0
+
+    val previousLength = output.size
+
+    for (element in elements) {
+      when (element) {
+        is ConcatenatedShortMessage -> {
+          output.add(InformationElementIdentifier.CONCATENATED_SHORT_MESSAGE.identifier.toByte())
+          output.add(3)
+          output.add((element.messageReferenceNumber ?: 0).toByte())
+          output.add(element.totalNumberOfParts.toByte())
+          output.add(element.sequenceNumberOfThisPart.toByte())
+        }
+
+        else -> throw IllegalStateException("Unimplemented element ${element.getType().identifier}")
+      }
+    }
+
+    output.add(previousLength, (output.size - previousLength).toByte())
+
+    return output.size - previousLength
+  }
+
   fun writeUserData(
     encodingResult: MessageEncodingResult,
     header: UserDataHeader,
@@ -193,7 +225,7 @@ object PDUWriteHelper {
       If this field is zero, there's no user data present
      */
 
-    val udhLength = header.write(output)
+    val udhLength = writeUserDataHeader(header, output)
     var messageBytes = encodingResult.bytes
 
     if (encodingResult.alphabet == PduAlphabet.GSM_SEVEN_BIT)
