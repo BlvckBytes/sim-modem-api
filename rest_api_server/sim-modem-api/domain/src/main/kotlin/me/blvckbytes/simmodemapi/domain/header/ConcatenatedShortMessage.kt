@@ -27,6 +27,19 @@ class ConcatenatedShortMessage(
     return InformationElementIdentifier.CONCATENATED_SHORT_MESSAGE
   }
 
+  override fun isContentEqualTo(other: InformationElement): Boolean {
+    if (other !is ConcatenatedShortMessage)
+      return false
+
+    if (other.messageReferenceNumber != this.messageReferenceNumber)
+      return false
+
+    if (other.totalNumberOfParts != this.totalNumberOfParts)
+      return false
+
+    return other.sequenceNumberOfThisPart == this.sequenceNumberOfThisPart
+  }
+
   override fun toString(): String {
     return "ConcatenatedShortMessage(messageReferenceNumber=$messageReferenceNumber, totalNumberOfParts=$totalNumberOfParts, sequenceNumberOfThisPart=$sequenceNumberOfThisPart)"
   }

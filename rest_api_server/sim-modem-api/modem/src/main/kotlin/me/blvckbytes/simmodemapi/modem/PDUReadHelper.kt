@@ -10,8 +10,6 @@ import java.util.EnumSet
 
 object PDUReadHelper {
 
-  // TODO: Write test cases
-
   fun parsePdu(direction: PDUDirection, data: ByteArray): PDU {
     try {
       val reader = ByteArrayReader(data)

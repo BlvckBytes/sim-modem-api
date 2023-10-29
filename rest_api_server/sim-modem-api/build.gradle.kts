@@ -48,4 +48,8 @@ subprojects {
       mavenBom(SpringBootPlugin.BOM_COORDINATES)
     }
   }
+
+  tasks.test {
+    useJUnitPlatform()
+  }
 }
