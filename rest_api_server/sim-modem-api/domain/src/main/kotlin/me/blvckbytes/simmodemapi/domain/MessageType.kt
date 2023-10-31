@@ -1,7 +1,7 @@
 package me.blvckbytes.simmodemapi.domain
 
 enum class MessageType(
-  private val direction: PDUDirection,
+  val direction: PDUDirection,
   private val value: Int
 ) {
   SMS_DELIVER       (PDUDirection.SC_TO_MS, 0b000000_00),

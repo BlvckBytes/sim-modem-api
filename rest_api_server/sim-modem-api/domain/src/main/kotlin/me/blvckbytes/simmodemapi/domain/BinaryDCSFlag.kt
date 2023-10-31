@@ -53,11 +53,33 @@ enum class BinaryDCSFlag(
       val result = EnumSet.noneOf(BinaryDCSFlag::class.java)
 
       for (type in values()) {
-        if ((value and type.bitmask) == type.value)
+        if (type.isSet(value))
           result.add(type)
       }
 
       return result
     }
+
+    fun fromAlphabetForShortMessage(alphabet: PduAlphabet): EnumSet<BinaryDCSFlag> {
+      val alphabetFlag = when(alphabet) {
+        PduAlphabet.GSM_SEVEN_BIT -> SEVEN_BIT_GSM_ALPHABET
+        PduAlphabet.EIGHT_BIT -> EIGHT_BIT_ALPHABET
+        PduAlphabet.UCS2_SIXTEEN_BIT -> SIXTEEN_BIT_UCS2_ALPHABET
+        else -> throw IllegalStateException("Unimplemented alphabet $alphabet")
+      }
+
+      return EnumSet.of(
+        MESSAGE_CLASS_1,
+        alphabetFlag
+      )
+    }
+  }
+
+  fun isSet(value: Int): Boolean {
+    return (value and this.bitmask) == this.value
+  }
+
+  fun apply(value: Int): Int {
+    return BinaryUtils.setBits(value, this.value, this.bitmask)
   }
 }

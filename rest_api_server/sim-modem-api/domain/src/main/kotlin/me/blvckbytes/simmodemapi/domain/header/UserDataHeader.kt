@@ -2,9 +2,14 @@ package me.blvckbytes.simmodemapi.domain.header
 
 import kotlin.reflect.cast
 
-class UserDataHeader {
+class UserDataHeader(vararg elements: InformationElement) {
 
   private val elementByType = mutableMapOf<InformationElementIdentifier<*>, InformationElement>()
+
+  init {
+    for (element in elements)
+      addElement(element)
+  }
 
   val elements get() = elementByType.values
 

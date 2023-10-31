@@ -11,6 +11,7 @@ import me.blvckbytes.simmodemapi.modem.coder.ASCIITextCoder
 import me.blvckbytes.simmodemapi.modem.coder.GSMTextCoder
 import me.blvckbytes.simmodemapi.modem.coder.UCS2TextCoder
 import org.springframework.stereotype.Component
+import java.util.*
 import kotlin.math.min
 
 @Component
@@ -197,29 +198,39 @@ class CommandGeneratorAdapter : CommandGeneratorPort {
     header: UserDataHeader,
     commandList: MutableList<SimModemCommand>
   ) {
-    val pduBytes = mutableListOf<Byte>()
-    val smscLength = PDUWriteHelper.writeSMSC(MESSAGE_CENTER, pduBytes)
-
-    PDUWriteHelper.writeMessageFlags(
-      rejectDuplicates = false,
-      validityPeriod = validityPeriodUnit != null,
-      statusReport = true,
-      userDataHeader = header.elements.isNotEmpty(),
-      replyPath = false, // TODO: Research the purpose of this flag
-      pduBytes
+    val pdu = PDU(
+      PhoneNumber.fromInternationalISDN(MESSAGE_CENTER),
+      MessageFlags(
+        MessageType.SMS_SUBMIT,
+        (
+        if (validityPeriodUnit == null)
+          ValidityPeriodFormat.NOT_PRESENT
+        else
+          ValidityPeriodFormat.RELATIVE_INTEGER
+        ),
+        (
+          if (header.elements.isNotEmpty())
+            EnumSet.of(
+              BinaryMessageFlag.STATUS_REPORT_REQUEST,
+              BinaryMessageFlag.HAS_USER_DATA_HEADER
+            )
+          else
+            EnumSet.of(BinaryMessageFlag.STATUS_REPORT_REQUEST)
+        )
+      ),
+      null,
+      PhoneNumber.fromInternationalISDN(recipient),
+      BinaryProtocolIdentifierFlag.FOR_SENDING_SHORT_MESSAGE,
+      BinaryDCSFlag.fromAlphabetForShortMessage(encodingResult.alphabet),
+      validityPeriodUnit,
+      validityPeriodValue,
+      header,
+      ""
     )
 
-    PDUWriteHelper.writeMessageReferenceNumber(null, pduBytes)
-    PDUWriteHelper.writeDestination(recipient, pduBytes)
-    PDUWriteHelper.writeProtocolIdentifier(pduBytes)
-    PDUWriteHelper.writeDataCodingScheme(encodingResult.alphabet, pduBytes)
+    val writeResult = PDUWriteHelper.writePdu(pdu, encodingResult)
 
-    if (validityPeriodUnit != null)
-      PDUWriteHelper.writeValidityPeriod(validityPeriodUnit, validityPeriodValue, pduBytes)
-
-    PDUWriteHelper.writeUserData(encodingResult, header, pduBytes)
-
-    commandList.add(makeCommand(DEFAULT_TIMEOUT_MS, PREDICATE_PROMPT, "AT+CMGS=${pduBytes.size - smscLength}\r\n"))
-    commandList.add(makeCommand(10 * 1000, PREDICATE_ENDS_IN_OK, "${BinaryUtils.binaryToHexString(pduBytes.toByteArray())}\u001A\r\n"))
+    commandList.add(makeCommand(DEFAULT_TIMEOUT_MS, PREDICATE_PROMPT, "AT+CMGS=${writeResult.data.size - writeResult.smscByteLength}\r\n"))
+    commandList.add(makeCommand(10 * 1000, PREDICATE_ENDS_IN_OK, "${BinaryUtils.binaryToHexString(writeResult.data)}\u001A\r\n"))
   }
 }

@@ -86,11 +86,19 @@ enum class BinaryTypeOfAddressFlag(
       val result = EnumSet.noneOf(BinaryTypeOfAddressFlag::class.java)
 
       for (type in values()) {
-        if ((value and type.bitmask) == type.value)
+        if (type.isSet(value))
           result.add(type)
       }
 
       return result
     }
+  }
+
+  fun isSet(value: Int): Boolean {
+    return (value and this.bitmask) == this.value
+  }
+
+  fun apply(value: Int): Int {
+    return BinaryUtils.setBits(value, this.value, this.bitmask)
   }
 }

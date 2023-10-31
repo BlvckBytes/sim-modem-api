@@ -1,8 +1,6 @@
 package me.blvckbytes.simmodemapi.modem
 
-import me.blvckbytes.simmodemapi.domain.BinaryUtils
-import me.blvckbytes.simmodemapi.domain.PduAlphabet
-import me.blvckbytes.simmodemapi.domain.ValidityPeriodUnit
+import me.blvckbytes.simmodemapi.domain.*
 import me.blvckbytes.simmodemapi.domain.header.ConcatenatedShortMessage
 import me.blvckbytes.simmodemapi.domain.header.InformationElementIdentifier
 import me.blvckbytes.simmodemapi.domain.header.UserDataHeader
@@ -14,21 +12,49 @@ object PDUWriteHelper {
     val characterLengthWithoutPadding: Int
   )
 
-  fun writeSMSC(phoneNumber: String?, output: MutableList<Byte>): Int {
+  fun writePdu(
+    pdu: PDU,
+    // The segmentor needs to encode the message to figure out it's maximum length anyways, but
+    // the domain model does not carry an encoded result (for obvious reasons). It would be a waste
+    // to encode again, so instead of accessing the wrapper for the message, this value is accessed
+    encodingResult: MessageEncodingResult,
+  ): PduWriteResult {
+    val pduBytes = mutableListOf<Byte>()
+    val smscLength = writeSMSC(pdu.smsCenter, pduBytes)
+
+    pduBytes.add(pdu.messageFlags.toFlag().toByte())
+    pduBytes.add((pdu.messageReferenceNumber ?: 0).toByte())
+
+    writeDestination(pdu.destination, pduBytes)
+
+    pduBytes.add(pdu.toProtocolIdentifierFlag().toByte())
+    pduBytes.add(pdu.toDCSFlag().toByte())
+
+    if (pdu.validityPeriodUnit != null)
+      pduBytes.add(pdu.toRelativeValidityPeriodValue().toByte())
+
+    writeUserData(encodingResult, pdu.header, pduBytes)
+
+    return PduWriteResult(pduBytes.toByteArray(), smscLength)
+  }
+
+  private fun writeSMSC(smsCenter: PhoneNumber?, output: MutableList<Byte>): Int {
     // SMSC means Short Message Service Centre
 
-    if (phoneNumber == null) {
+    if (smsCenter == null) {
       // Length zero instructs to use the default value
       output.add(0)
       return 1
     }
 
+    // Size byte
     var length = 1
     val lengthIndex = output.size
 
-    length += writeTOA(output)
+    output.add(smsCenter.toTypeFlag().toByte())
+    ++length
 
-    val phoneNumberWriteResult = writePhoneNumber(phoneNumber, output)
+    val phoneNumberWriteResult = writePhoneNumber(smsCenter.number, output)
     val phoneNumberByteLength = phoneNumberWriteResult.characterLengthWithPadding / 2
 
     output.add(lengthIndex, (phoneNumberByteLength + 1).toByte())
@@ -37,137 +63,80 @@ object PDUWriteHelper {
     return length
   }
 
-  fun writeMessageFlags(
-    rejectDuplicates: Boolean,
-    validityPeriod: Boolean,
-    statusReport: Boolean,
-    userDataHeader: Boolean,
-    replyPath: Boolean,
-    output: MutableList<Byte>
-  ): Int {
-    // MS - Mobile Station, SC - SMS Center
-
-    /*
-      One byte for six parameters, as follows:
-      Bit 0,1: TP-MTI (Message Type Indication)
-      00 SMS-DELIVER SC->MS
-      00 SMS-DELIVER REPORT MS->SC
-      10 SMS-STATUS-REPORT SC->MS
-      10 SMS-COMMAND MS->SC
-      01 SMS-SUBMIT MS->SC
-      01 SMS-SUBMIT REPORT SC->MS
-      11 RESERVED
-      Bit 2:   TP-RD (Reject Duplicates), 0 for off, 1 for on
-      Bit 3,4: TP-VPF (Validity Period):
-      00 not set
-      10 present and integer represent (relative)
-      01 reserved
-      11 present and semi-octet represented (absolute)
-      Bit 5:   TP-SRR (Status Report Request), 0 for off, 1 for on
-      Bit 6:   TP-UDHI (User Data Header Indicator)
-      0 The TP-UD field contains only the short message
-      1 The beginning of the TP-UD field contains a header in addition to the short message
-      Bit 7:   TP-RP (Reply Path), 0 for off, 1 for on
-     */
-    var flags = 0b00000001
-
-    if (rejectDuplicates)
-      flags = flags or 0b00000100
-
-    // Relative validity period (since received by SC), comprised of a single byte
-    if (validityPeriod)
-      flags = flags or 0b00010000
-
-    if (statusReport)
-      flags = flags or 0b00100000
-
-    if (userDataHeader)
-      flags = flags or 0b01000000
-
-    if (replyPath)
-      flags = flags or 0b10000000
-
-    output.add(flags.toByte())
-    return 1
-  }
-
-  fun writeMessageReferenceNumber(messageReferenceNumber: Int?, output: MutableList<Byte>): Int {
-    if (messageReferenceNumber == 0)
-      throw IllegalStateException("Value zero is reserved, please use NULL for auto-generation")
-
-    output.add((messageReferenceNumber ?: 0).toByte())
-    return 1
-  }
-
-  fun writeDestination(phoneNumber: String, output: MutableList<Byte>): Int {
+  private fun writeDestination(phoneNumber: PhoneNumber, output: MutableList<Byte>): Int {
     val lengthIndex = output.size
-    val toaLength = writeTOA(output)
 
-    val phoneNumberWriteResult = writePhoneNumber(phoneNumber, output)
+    output.add(phoneNumber.toTypeFlag().toByte())
+
+    val phoneNumberWriteResult = writePhoneNumber(phoneNumber.number, output)
     output.add(lengthIndex, phoneNumberWriteResult.characterLengthWithoutPadding.toByte())
 
-    return toaLength + phoneNumberWriteResult.characterLengthWithPadding / 2
+    // TOA byte counts into total length
+    return 1 + phoneNumberWriteResult.characterLengthWithPadding / 2
   }
 
-  fun writeProtocolIdentifier(output: MutableList<Byte>): Int {
-    output.add(0x00)
-    return 1
-  }
-
-  fun writeDataCodingScheme(
-    alphabet: PduAlphabet,
-    output: MutableList<Byte>
-  ): Int {
+  private fun writePhoneNumber(phoneNumber: String, output: MutableList<Byte>): PhoneNumberWriteResult {
     /*
-      This byte indicates how the user data is to be parsed
-
-      Bit 1,0: Message class, 00 means show but don't save, 01 means "normal" SMS
-      Bit 2:   Encoding due to character set, 0 means GSM charset (7 bit/char), 1 means other (8 bit/char)
-      Bit 3:   Reserved field, has to be 0
-      Bit 7-4: Coding Group, 00XX - General data coding, then:
-      Bit 5:   1 means GSM standard compressed, 0 means uncompressed
-      Bit 4:   1 means bits 1,0 store a message class, 0 means that they have no meaning
-      Bit 3,2: Indicate used alphabet, as follows:
-      00 Default Alphabet (GSM 7 bit)
-      01 8 bit
-      10 UCS2 (16 bit)
-      11 Reserved
+      Phone number, as BCD (Binary Coded Decimal), in alternating order
+      An uneven length is padded with a trailing F
      */
-    output.add((0b00010001 or alphabet.bitPattern).toByte())
-    return 1
-  }
+    var paddedPhoneNumber = phoneNumber
 
-  fun writeValidityPeriod(
-    unit: ValidityPeriodUnit,
-    value: Double,
-    output: MutableList<Byte>
-  ): Int {
+    // Prefix or escape digits shall not be included
+    if (paddedPhoneNumber.startsWith("+"))
+      paddedPhoneNumber = paddedPhoneNumber.substring(1)
+
+    val needsPadding = paddedPhoneNumber.length % 2 != 0
+
     /*
-      This byte indicates for how long this message is still valid to deliver to the
-      recipient, relative to when the SC received it.
-
-      TP-VP value  Validity period value
-      0 to 143     (TP-VP + 1) x 5 minutes (i.e. 5 minutes intervals up to 12 hours)
-      144 to 167   12 hours + ((TP-VP -143) x 30 minutes)
-      168 to 196   (TP-VP - 166) x 1 day
-      197 to 255   (TP-VP - 192) x 1 week
-
-      =>
-
-      0-143: 5, 10, 15, ... 715, 720 (12h)
-      144-167: 12.5h, 13h, 13.5h, ... 23.5h, 24h
-      168-196: 2d, 3d, 4d, ... 29d, 30d
-      197-255: 5w, 6w, 7w, ..., 62w, 63w
+      If the Address contains an odd number of digits, bits 5 to 8 of the last
+      octet shall be filled with an end mark coded as "1111".
      */
+    if (needsPadding)
+      paddedPhoneNumber += "F"
 
-    output.add(when (unit) {
-      ValidityPeriodUnit.MINUTES -> (value / 5) - 1
-      ValidityPeriodUnit.HOURS -> (value - 12) * 2 + 143
-      ValidityPeriodUnit.DAYS -> (value + 166).toInt()
-      ValidityPeriodUnit.WEEKS -> (value + 192).toInt()
-    }.toByte())
+    paddedPhoneNumber.chunked(2).forEach {
+      output.add(
+        it
+          /*
+            The number digit(s) in octet 1 precedes the digit(s) in octet 2 etc.
+            The number digit which would be entered first is located in octet 1, bits 1 to 4.
 
-    return 1
+            => Octets are in entering order, but each octet contains two digits, and
+               those digits are swapped.
+           */
+          .reversed()
+
+          /*
+            Each digit is encoded to a BCD-nibble, as follows:
+            0000 0
+            0001 1
+            0010 2
+            0011 3
+            0100 4
+            0101 5
+            0110 6
+            0111 7
+            1000 8
+            1001 9
+            1010 *
+            1011 #
+            1100 a
+            1101 b
+            1110 c
+            1111 Used as an end-mark in the case of an odd number of digits
+
+            NOTE: For now, *,#,a,b,c are unsupported.
+           */
+          .toInt(16)
+          .toByte()
+      )
+    }
+
+    return PhoneNumberWriteResult(
+      paddedPhoneNumber.length,
+      if (needsPadding) paddedPhoneNumber.length - 1 else paddedPhoneNumber.length
+    )
   }
 
   private fun writeUserDataHeader(
@@ -184,6 +153,7 @@ object PDUWriteHelper {
     for (element in elements) {
       when (element) {
         is ConcatenatedShortMessage -> {
+          // TODO: Actually... maybe this should live in the domain? It's kind of domain knowledge...
           output.add(InformationElementIdentifier.CONCATENATED_SHORT_MESSAGE.identifier.toByte())
           output.add(3)
           output.add((element.messageReferenceNumber ?: 0).toByte())
@@ -200,9 +170,9 @@ object PDUWriteHelper {
     return output.size - previousLength
   }
 
-  fun writeUserData(
+  private fun writeUserData(
     encodingResult: MessageEncodingResult,
-    header: UserDataHeader,
+    header: UserDataHeader?,
     output: MutableList<Byte>,
   ): Int {
     val previousLength = output.size
@@ -225,7 +195,13 @@ object PDUWriteHelper {
       If this field is zero, there's no user data present
      */
 
-    val udhLength = writeUserDataHeader(header, output)
+    val udhLength = (
+      if (header == null)
+        0
+      else
+        writeUserDataHeader(header, output)
+    )
+
     var messageBytes = encodingResult.bytes
 
     if (encodingResult.alphabet == PduAlphabet.GSM_SEVEN_BIT)
@@ -327,80 +303,5 @@ object PDUWriteHelper {
     }
 
     return result.toByteArray()
-  }
-
-  private fun writeTOA(output: MutableList<Byte>): Int {
-  /*
-    TOA (Type Of Address)
-    Bit 7:       always 1
-    Bit 6,5,4:   TON (Type Of Number), 001 means international number, 000 means "unknown"
-    Bit 3,2,1,0: NPI (Numbering Plan Identifier), 0001 means E.164/E.163
-   */
-    output.add(0b1_001_0001.toByte())
-    return 1
-  }
-
-  private fun writePhoneNumber(phoneNumber: String, output: MutableList<Byte>): PhoneNumberWriteResult {
-    /*
-      Phone number, as BCD (Binary Coded Decimal), in alternating order
-      An uneven length is padded with a trailing F
-     */
-    var paddedPhoneNumber = phoneNumber
-
-    // Prefix or escape digits shall not be included
-    if (paddedPhoneNumber.startsWith("+"))
-      paddedPhoneNumber = paddedPhoneNumber.substring(1)
-
-    val needsPadding = paddedPhoneNumber.length % 2 != 0
-
-    /*
-      If the Address contains an odd number of digits, bits 5 to 8 of the last
-      octet shall be filled with an end mark coded as "1111".
-     */
-    if (needsPadding)
-      paddedPhoneNumber += "F"
-
-    paddedPhoneNumber.chunked(2).forEach {
-      output.add(
-        it
-          /*
-            The number digit(s) in octet 1 precedes the digit(s) in octet 2 etc.
-            The number digit which would be entered first is located in octet 1, bits 1 to 4.
-
-            => Octets are in entering order, but each octet contains two digits, and
-               those digits are swapped.
-           */
-          .reversed()
-
-          /*
-            Each digit is encoded to a BCD-nibble, as follows:
-            0000 0
-            0001 1
-            0010 2
-            0011 3
-            0100 4
-            0101 5
-            0110 6
-            0111 7
-            1000 8
-            1001 9
-            1010 *
-            1011 #
-            1100 a
-            1101 b
-            1110 c
-            1111 Used as an end-mark in the case of an odd number of digits
-
-            NOTE: For now, *,#,a,b,c are unsupported.
-           */
-          .toInt(16)
-          .toByte()
-      )
-    }
-
-    return PhoneNumberWriteResult(
-      paddedPhoneNumber.length,
-      if (needsPadding) paddedPhoneNumber.length - 1 else paddedPhoneNumber.length
-    )
   }
 }

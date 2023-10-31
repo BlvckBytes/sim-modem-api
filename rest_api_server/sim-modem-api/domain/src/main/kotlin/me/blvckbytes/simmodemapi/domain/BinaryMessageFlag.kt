@@ -84,14 +84,25 @@ enum class BinaryMessageFlag(
       val result = EnumSet.noneOf(BinaryMessageFlag::class.java)
 
       for (type in values()) {
-        if (!type.messageTypes.contains(messageType))
-          continue
-
-        if ((value and type.bitmask) == type.value)
+        if (type.isSet(messageType, value))
           result.add(type)
       }
 
       return result
     }
+  }
+
+  fun isSet(messageType: MessageType, value: Int): Boolean {
+    if (!messageTypes.contains(messageType))
+      return false
+
+    return (value and this.bitmask) == this.value
+  }
+
+  fun apply(messageType: MessageType, value: Int): Int {
+    if (!messageTypes.contains(messageType))
+      throw IllegalStateException("$this is not applicable to message type $messageType")
+
+    return BinaryUtils.setBits(value, this.value, this.bitmask)
   }
 }

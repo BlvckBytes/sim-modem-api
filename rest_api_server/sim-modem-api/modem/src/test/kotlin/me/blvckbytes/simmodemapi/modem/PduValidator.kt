@@ -1,11 +1,34 @@
 package me.blvckbytes.simmodemapi.modem
 
 import me.blvckbytes.simmodemapi.domain.*
+import me.blvckbytes.simmodemapi.domain.exception.IllegalCharacterException
 import me.blvckbytes.simmodemapi.domain.header.InformationElement
+import me.blvckbytes.simmodemapi.modem.coder.GSMTextCoder
+import me.blvckbytes.simmodemapi.modem.coder.UCS2TextCoder
 import org.junit.jupiter.api.AssertionFailureBuilder
 import org.junit.jupiter.api.Assertions.*
 
 class PduValidator(direction: PDUDirection, text: String) {
+
+  companion object {
+    fun encodeMessage(message: String): MessageEncodingResult {
+      for (currentEncoding in PduAlphabet.AVAILABLE_ALPHABETS_ASCENDING) {
+        // TODO: Text coders should have a unified API and also live in the domain
+        // TODO: PduAlphabet should point to their encode decode methods
+        try {
+          return MessageEncodingResult(when (currentEncoding) {
+            PduAlphabet.GSM_SEVEN_BIT -> GSMTextCoder.encode(message)
+            PduAlphabet.UCS2_SIXTEEN_BIT -> UCS2TextCoder.encode(message)
+            else -> throw IllegalStateException("Requested to use an unimplemented alphabet for encoding")
+          }, message.length, currentEncoding)
+        } catch (exception: IllegalCharacterException) {
+          continue
+        }
+      }
+
+      throw IllegalStateException("Could not encode the message $message")
+    }
+  }
 
   private val pdu: PDU
 

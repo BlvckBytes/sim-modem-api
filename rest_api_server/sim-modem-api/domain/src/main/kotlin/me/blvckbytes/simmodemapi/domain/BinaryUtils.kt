@@ -38,6 +38,6 @@ object BinaryUtils {
   }
 
   fun setBits(destination: Int, source: Int, bitmask: Int): Int {
-    TODO()
+    return (destination and bitmask.inv()) or (source and bitmask)
   }
 }
