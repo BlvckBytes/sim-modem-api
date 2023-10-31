@@ -124,11 +124,11 @@ class PduValidator(direction: PDUDirection, text: String) {
   }
 
   fun assertHeaderContainsExact(vararg informationElements: InformationElement): PduValidator {
-    val headerElements = pdu.header!!.elements
+    assertNotNull(pdu.header)
 
     ensureContainsExact(
       informationElements.size, informationElements::iterator,
-      headerElements.size, headerElements::iterator
+      pdu.header!!.size, pdu.header!!::iterator
     ) { a, b -> a.isContentEqualTo(b) }
 
     return this

@@ -5,7 +5,6 @@ import me.blvckbytes.simmodemapi.domain.exception.IllegalCharacterException
 import me.blvckbytes.simmodemapi.domain.exception.MessageTooLongException
 import me.blvckbytes.simmodemapi.domain.pdu.*
 import me.blvckbytes.simmodemapi.domain.pdu.header.ConcatenatedShortMessage
-import me.blvckbytes.simmodemapi.domain.pdu.header.InformationElementIdentifier
 import me.blvckbytes.simmodemapi.domain.pdu.header.UserDataHeader
 import me.blvckbytes.simmodemapi.domain.port.CommandGeneratorPort
 import me.blvckbytes.simmodemapi.domain.textcoder.ASCIITextCoder
@@ -83,7 +82,7 @@ class CommandGeneratorAdapter : CommandGeneratorPort {
         // Message would not fit into one part, so a concatenation header is required
         if (messageParts.size > 0 || currentSubstringLength < remainingMessageLength) {
           // The number of total messages are not known yet and will be patched later
-          header.addElement(ConcatenatedShortMessage(null, 1, messageParts.size + 1))
+          header.add(ConcatenatedShortMessage(null, 1, messageParts.size + 1))
         }
 
         // The header takes up space of the actual message
@@ -112,7 +111,7 @@ class CommandGeneratorAdapter : CommandGeneratorPort {
       val (encodingResult, header) = messageParts[segmentNumber - 1]
 
       // Patch the total part count now that it is known
-      header.getElement(InformationElementIdentifier.CONCATENATED_SHORT_MESSAGE)?.totalNumberOfParts = numberOfSegments
+      header.getConcatenatedShortMessage()?.totalNumberOfParts = numberOfSegments
 
       makeSendSmsSegmentCommands(recipient, validityPeriodUnit, validityPeriodValue, encodingResult, header, commandList)
     }
@@ -143,11 +142,11 @@ class CommandGeneratorAdapter : CommandGeneratorPort {
   }
 
   private fun getNumberOfTakenUpCharacters(header: UserDataHeader, alphabet: PDUAlphabet): Int {
-    if (header.elements.isEmpty())
+    if (header.isEmpty())
       return 0
 
     // Start with one, because of the length indicator byte
-    val byteLength = header.elements.fold(1) { accumulator, current -> accumulator + current.getLengthInBytes() }
+    val byteLength = header.fold(1) { accumulator, current -> accumulator + current.getLengthInBytes() }
 
     return (byteLength * 8 + (alphabet.numberOfBits - 1)) / alphabet.numberOfBits
   }
@@ -192,7 +191,7 @@ class CommandGeneratorAdapter : CommandGeneratorPort {
           ValidityPeriodFormat.RELATIVE_INTEGER
         ),
         (
-          if (header.elements.isNotEmpty())
+          if (header.isNotEmpty())
             EnumSet.of(
               BinaryMessageFlag.STATUS_REPORT_REQUEST,
               BinaryMessageFlag.HAS_USER_DATA_HEADER

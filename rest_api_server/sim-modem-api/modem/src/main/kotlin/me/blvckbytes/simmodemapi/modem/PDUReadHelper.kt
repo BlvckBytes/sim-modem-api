@@ -118,7 +118,7 @@ object PDUReadHelper {
             if (messageReferenceNumber == 0)
               messageReferenceNumber = null
 
-            header.addElement(ConcatenatedShortMessage(messageReferenceNumber, totalNumberOfParts, sequenceNumberOfThisPart))
+            header.add(ConcatenatedShortMessage(messageReferenceNumber, totalNumberOfParts, sequenceNumberOfThisPart))
           }
           else -> throw InvalidPduException(PduInvalidityReason.INVALID_INFORMATION_ELEMENT_IDENTIFIER, "Unknown identifier $identifierValue")
         }

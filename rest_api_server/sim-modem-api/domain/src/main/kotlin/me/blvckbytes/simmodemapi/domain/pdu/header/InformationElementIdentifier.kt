@@ -2,9 +2,15 @@ package me.blvckbytes.simmodemapi.domain.pdu.header
 
 import kotlin.reflect.KClass
 
-sealed class InformationElementIdentifier<T: InformationElement>(
+enum class InformationElementIdentifier(
   val identifier: Int,
-  val wrapperClass: KClass<T>
+  private val wrapper: KClass<*>
 ) {
-  object CONCATENATED_SHORT_MESSAGE: InformationElementIdentifier<ConcatenatedShortMessage>(0x00, ConcatenatedShortMessage::class)
+  CONCATENATED_SHORT_MESSAGE(0, ConcatenatedShortMessage::class)
+
+  ;
+
+  fun isInstance(value: Any): Boolean {
+    return wrapper.isInstance(value)
+  }
 }

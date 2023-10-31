@@ -144,14 +144,12 @@ object PDUWriteHelper {
     header: UserDataHeader,
     output: MutableList<Byte>
   ): Int {
-    val elements = header.elements
-
-    if (elements.isEmpty())
+    if (header.isEmpty())
       return 0
 
     val previousLength = output.size
 
-    for (element in elements)
+    for (element in header)
       element.write(output)
 
     output.add(previousLength, (output.size - previousLength).toByte())
