@@ -61,17 +61,7 @@ enum class BinaryDCSFlag(
     }
 
     fun fromAlphabetForShortMessage(alphabet: PduAlphabet): EnumSet<BinaryDCSFlag> {
-      val alphabetFlag = when(alphabet) {
-        PduAlphabet.GSM_SEVEN_BIT -> SEVEN_BIT_GSM_ALPHABET
-        PduAlphabet.EIGHT_BIT -> EIGHT_BIT_ALPHABET
-        PduAlphabet.UCS2_SIXTEEN_BIT -> SIXTEEN_BIT_UCS2_ALPHABET
-        else -> throw IllegalStateException("Unimplemented alphabet $alphabet")
-      }
-
-      return EnumSet.of(
-        MESSAGE_CLASS_1,
-        alphabetFlag
-      )
+      return EnumSet.of(MESSAGE_CLASS_1, alphabet.dcsFlag)
     }
   }
 

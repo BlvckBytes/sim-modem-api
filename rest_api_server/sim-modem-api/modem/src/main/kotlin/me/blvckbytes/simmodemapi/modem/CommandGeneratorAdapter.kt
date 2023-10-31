@@ -8,8 +8,6 @@ import me.blvckbytes.simmodemapi.domain.header.InformationElementIdentifier
 import me.blvckbytes.simmodemapi.domain.header.UserDataHeader
 import me.blvckbytes.simmodemapi.domain.port.CommandGeneratorPort
 import me.blvckbytes.simmodemapi.domain.textcoder.ASCIITextCoder
-import me.blvckbytes.simmodemapi.domain.textcoder.GSMTextCoder
-import me.blvckbytes.simmodemapi.domain.textcoder.UCS2TextCoder
 import org.springframework.stereotype.Component
 import java.util.*
 import kotlin.math.min
@@ -157,12 +155,7 @@ class CommandGeneratorAdapter : CommandGeneratorPort {
       }
     }
 
-    return when (alphabet) {
-      PduAlphabet.GSM_SEVEN_BIT -> (byteLength * 8 + (7 - 1)) / 7
-      PduAlphabet.EIGHT_BIT -> byteLength
-      PduAlphabet.UCS2_SIXTEEN_BIT -> (byteLength * 8 + (16 - 1)) / 16
-      else -> throw IllegalStateException("Unsupported alphabet")
-    }
+    return (byteLength * 8 + (alphabet.numberOfBits - 1)) / alphabet.numberOfBits
   }
 
   private fun makeCommand(
@@ -180,11 +173,7 @@ class CommandGeneratorAdapter : CommandGeneratorPort {
 
   private fun tryEncodeMessage(message: String, alphabet: PduAlphabet): MessageEncodingResult? {
     return try {
-      MessageEncodingResult(when (alphabet) {
-        PduAlphabet.GSM_SEVEN_BIT -> GSMTextCoder.encode(message)
-        PduAlphabet.UCS2_SIXTEEN_BIT -> UCS2TextCoder.encode(message)
-        else -> throw IllegalStateException("Requested to use an unimplemented alphabet for encoding")
-      }, message.length, alphabet)
+      return MessageEncodingResult(alphabet.textCoder.encode(message), message.length, alphabet)
     } catch (exception: IllegalCharacterException) {
       null
     }
