@@ -37,6 +37,16 @@ Please read the code to find out about available endpoints, as things are rapidl
 
 To compile, use [compile.sh](rest_api_server/compile.sh). A named and detached screen that also logs to a uniquely named file can be created using [start.sh](rest_api_server/start.sh). The [ensure_running.sh](rest_api_server/ensure_running.sh) script checks periodically whether the named screen is up, and if it isn't, it calls said start script. The [ensure_running.service](rest_api_server/ensure_running.service) is a `systemd`-service, which makes sure that [ensure_running.sh](rest_api_server/ensure_running.sh) is up at all times. This service can be installed by making use of [install_service.sh](rest_api_server/install_service.sh).
 
+I am using the following specification documents to implement GSM features:
+
+- [GSMTS 0407](https://www.etsi.org/deliver/etsi_gts/04/0407/05.00.00_60/gsmts_0407v050000p.pdf)
+- [GSMTS 0411](https://www.etsi.org/deliver/etsi_gts/04/0411/05.01.00_60/gsmts_0411v050100p.pdf)
+- [GSMTS 0408](https://www.etsi.org/deliver/etsi_gts/04/0408/05.00.00_60/gsmts_0408v050000p.pdf)
+- [GSMTS 0340](https://www.etsi.org/deliver/etsi_gts/03/0340/05.03.00_60/gsmts_0340v050300p.pdf)
+- [GSMTS 0338](https://www.etsi.org/deliver/etsi_gts/03/0338/05.01.00_60/gsmts_0338v050100p.pdf)
+- [ETSITS 123038](https://www.etsi.org/deliver/etsi_ts/123000_123099/123038/10.00.00_60/ts_123038v100000p.pdf)
+- [ZTE AT Manual](https://cdn.sparkfun.com/datasheets/Cellular/AT_Command_Manual_For_ZTE_Corporation_MG2639_V2_Module_v2.0.pdf)
+
 ## My Setup
 
 <img src="readme_images/setup.jpg" style="width: 45%; min-width: 300px;">
