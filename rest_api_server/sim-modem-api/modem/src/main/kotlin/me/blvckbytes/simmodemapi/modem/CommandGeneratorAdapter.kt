@@ -8,18 +8,19 @@ import me.blvckbytes.simmodemapi.domain.pdu.header.ConcatenatedShortMessage
 import me.blvckbytes.simmodemapi.domain.pdu.header.UserDataHeader
 import me.blvckbytes.simmodemapi.domain.port.CommandGeneratorPort
 import me.blvckbytes.simmodemapi.domain.textcoder.ASCIITextCoder
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
 import java.util.*
 import kotlin.math.min
 
 @Component
-class CommandGeneratorAdapter : CommandGeneratorPort {
+class CommandGeneratorAdapter(
+  @Value("\${modem.message-center}")
+  val modemMessageCenter: String
+) : CommandGeneratorPort {
 
   companion object {
     private const val DEFAULT_TIMEOUT_MS = 3000
-
-    // TODO: This value should be configurable
-    private const val MESSAGE_CENTER = "+4365009000000"
 
     private val CONTROL_CHARACTERS = (0..31).map { it.toChar() }
     private val PREDICATE_ENDS_IN_OK = ResponsePredicate { trimControlCharacters(it).endsWith("OK") }
@@ -181,7 +182,7 @@ class CommandGeneratorAdapter : CommandGeneratorPort {
     commandList: MutableList<SimModemCommand>
   ) {
     val pdu = PDU(
-      PhoneNumber.fromInternationalISDN(MESSAGE_CENTER),
+      PhoneNumber.fromInternationalISDN(modemMessageCenter),
       MessageFlags(
         MessageType.SMS_SUBMIT,
         (
