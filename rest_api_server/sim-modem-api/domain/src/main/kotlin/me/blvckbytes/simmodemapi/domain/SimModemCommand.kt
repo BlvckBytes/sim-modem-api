@@ -1,8 +1,9 @@
 package me.blvckbytes.simmodemapi.domain
 
 class SimModemCommand(
+  val type: SimModemCommandType,
   val binaryCommand: ByteArray,
   val readableCommand: String,
-  val timeoutMs: Int,
+  val customTimeoutMs: Int?,
   val responsePredicate: ResponsePredicate?
 )

@@ -75,29 +75,14 @@ class SimModemSocketAdapter(
   private fun startQueuePopThread() {
     thread(name = "queue-pop") {
       while (true) {
-        var nextChain: SimModemCommandChain?
-
-        synchronized(commandQueue) {
-          nextChain = commandQueue.peek()
-
-          if (nextChain == null)
-            return@synchronized
-
-          if (!commandTypeHistory.isReadyToBeExecuted(nextChain!!.type)) {
-            nextChain = null
-            return@synchronized
-          }
-
-          commandQueue.poll()
-        }
+        val nextChain = commandQueue.poll()
 
         if (nextChain == null) {
           Thread.sleep(QUEUE_PEEK_DELAY_MS)
           continue
         }
 
-        executeChain(nextChain!!)
-        commandTypeHistory.add(nextChain!!.type)
+        executeChain(nextChain)
       }
     }
   }
@@ -106,7 +91,14 @@ class SimModemSocketAdapter(
     val responses = mutableListOf<SimModemResponse>()
 
     for (command in commandChain.commands) {
+
+      val remainingRequiredDelay = commandTypeHistory.getRemainingRequiredDelay(command.type)
+
+      if (remainingRequiredDelay > 0)
+        Thread.sleep(remainingRequiredDelay)
+
       val result = executeCommand(command)
+      commandTypeHistory.add(command.type)
 
       if (result.first == ExecutionResult.UNAVAILABLE) {
         commandChain.resultHandler.handle(ExecutionResult.UNAVAILABLE, listOf())
@@ -179,7 +171,7 @@ class SimModemSocketAdapter(
           continue
       } catch (ignored: SocketTimeoutException) {}
 
-      availableSocket.soTimeout = command.timeoutMs
+      availableSocket.soTimeout = command.customTimeoutMs ?: command.type.timeoutMs
 
       outputStream.write(command.binaryCommand)
       outputStream.flush()

@@ -20,7 +20,7 @@ class SimModemCommandDto(
         BinaryUtils.binaryToHexString(model.command.binaryCommand),
         model.readableContent,
         BinaryUtils.binaryToHexString(model.binaryContent),
-        model.command.timeoutMs,
+        model.command.customTimeoutMs ?: model.command.type.timeoutMs,
         model.commandSentStamp,
         model.responseReceivedStamp
       )
