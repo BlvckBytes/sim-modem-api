@@ -1,4 +1,4 @@
-package me.blvckbytes.simmodemapi.domain
+package me.blvckbytes.simmodemapi.domain.pdu
 
 enum class PDUDirection {
   // MS = Mobile Station, SC = Service Center

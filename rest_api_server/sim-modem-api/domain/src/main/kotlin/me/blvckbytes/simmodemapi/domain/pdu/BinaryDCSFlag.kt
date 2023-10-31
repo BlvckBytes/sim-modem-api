@@ -1,5 +1,6 @@
-package me.blvckbytes.simmodemapi.domain
+package me.blvckbytes.simmodemapi.domain.pdu
 
+import me.blvckbytes.simmodemapi.domain.BinaryUtils
 import java.util.*
 
 /*
@@ -60,7 +61,7 @@ enum class BinaryDCSFlag(
       return result
     }
 
-    fun fromAlphabetForShortMessage(alphabet: PduAlphabet): EnumSet<BinaryDCSFlag> {
+    fun fromAlphabetForShortMessage(alphabet: PDUAlphabet): EnumSet<BinaryDCSFlag> {
       return EnumSet.of(MESSAGE_CLASS_1, alphabet.dcsFlag)
     }
   }

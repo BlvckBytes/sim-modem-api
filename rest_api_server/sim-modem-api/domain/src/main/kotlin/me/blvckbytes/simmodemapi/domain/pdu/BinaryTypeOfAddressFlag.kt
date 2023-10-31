@@ -1,5 +1,6 @@
-package me.blvckbytes.simmodemapi.domain
+package me.blvckbytes.simmodemapi.domain.pdu
 
+import me.blvckbytes.simmodemapi.domain.BinaryUtils
 import java.util.*
 
 enum class BinaryTypeOfAddressFlag(

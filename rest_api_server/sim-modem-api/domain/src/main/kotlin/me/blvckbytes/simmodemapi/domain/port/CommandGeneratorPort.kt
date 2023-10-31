@@ -3,7 +3,7 @@ package me.blvckbytes.simmodemapi.domain.port
 import me.blvckbytes.simmodemapi.domain.SimModemCommand
 import me.blvckbytes.simmodemapi.domain.SimModemCommandChain
 import me.blvckbytes.simmodemapi.domain.SimModemResultHandler
-import me.blvckbytes.simmodemapi.domain.ValidityPeriodUnit
+import me.blvckbytes.simmodemapi.domain.pdu.ValidityPeriodUnit
 
 interface CommandGeneratorPort {
 

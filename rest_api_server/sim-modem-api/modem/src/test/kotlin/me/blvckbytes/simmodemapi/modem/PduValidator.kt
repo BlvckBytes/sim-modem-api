@@ -1,8 +1,8 @@
 package me.blvckbytes.simmodemapi.modem
 
-import me.blvckbytes.simmodemapi.domain.*
 import me.blvckbytes.simmodemapi.domain.exception.IllegalCharacterException
-import me.blvckbytes.simmodemapi.domain.header.InformationElement
+import me.blvckbytes.simmodemapi.domain.pdu.*
+import me.blvckbytes.simmodemapi.domain.pdu.header.InformationElement
 import org.junit.jupiter.api.AssertionFailureBuilder
 import org.junit.jupiter.api.Assertions.*
 
@@ -10,7 +10,7 @@ class PduValidator(direction: PDUDirection, text: String) {
 
   companion object {
     fun encodeMessage(message: String): MessageEncodingResult {
-      for (currentEncoding in PduAlphabet.AVAILABLE_ALPHABETS_ASCENDING) {
+      for (currentEncoding in PDUAlphabet.AVAILABLE_ALPHABETS_ASCENDING) {
         try {
           return MessageEncodingResult(currentEncoding.textCoder.encode(message), message.length, currentEncoding)
         } catch (exception: IllegalCharacterException) {

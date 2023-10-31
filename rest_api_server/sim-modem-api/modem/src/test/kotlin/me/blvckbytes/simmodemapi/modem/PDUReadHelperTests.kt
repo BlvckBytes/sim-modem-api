@@ -1,14 +1,15 @@
 package me.blvckbytes.simmodemapi.modem
 
-import me.blvckbytes.simmodemapi.domain.*
-import me.blvckbytes.simmodemapi.domain.header.ConcatenatedShortMessage
+import me.blvckbytes.simmodemapi.domain.pdu.*
+import me.blvckbytes.simmodemapi.domain.pdu.header.ConcatenatedShortMessage
 import org.junit.jupiter.api.Test
 
 class PDUReadHelperTests {
 
   @Test
   fun `can read GSM-7, no header, with SMSC`() {
-    PduValidator(PDUDirection.MS_TO_SC, """
+    PduValidator(
+      PDUDirection.MS_TO_SC, """
       07 91 5892000000F0 # SMSC 85290000000
       01 # SUBMIT
       00 # No reference number
@@ -39,7 +40,8 @@ class PDUReadHelperTests {
 
   @Test
   fun `can read GSM-7, no header, without SMSC`() {
-    PduValidator(PDUDirection.MS_TO_SC, """
+    PduValidator(
+      PDUDirection.MS_TO_SC, """
       00 # Default SMSC
       01 # SUBMIT
       00 # No reference number

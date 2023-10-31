@@ -3,9 +3,10 @@ package me.blvckbytes.simmodemapi.modem
 import me.blvckbytes.simmodemapi.domain.*
 import me.blvckbytes.simmodemapi.domain.exception.IllegalCharacterException
 import me.blvckbytes.simmodemapi.domain.exception.MessageTooLongException
-import me.blvckbytes.simmodemapi.domain.header.ConcatenatedShortMessage
-import me.blvckbytes.simmodemapi.domain.header.InformationElementIdentifier
-import me.blvckbytes.simmodemapi.domain.header.UserDataHeader
+import me.blvckbytes.simmodemapi.domain.pdu.*
+import me.blvckbytes.simmodemapi.domain.pdu.header.ConcatenatedShortMessage
+import me.blvckbytes.simmodemapi.domain.pdu.header.InformationElementIdentifier
+import me.blvckbytes.simmodemapi.domain.pdu.header.UserDataHeader
 import me.blvckbytes.simmodemapi.domain.port.CommandGeneratorPort
 import me.blvckbytes.simmodemapi.domain.textcoder.ASCIITextCoder
 import org.springframework.stereotype.Component
@@ -75,7 +76,7 @@ class CommandGeneratorAdapter : CommandGeneratorPort {
         })
       }
 
-      for (currentEncoding in PduAlphabet.AVAILABLE_ALPHABETS_ASCENDING) {
+      for (currentEncoding in PDUAlphabet.AVAILABLE_ALPHABETS_ASCENDING) {
         var currentSubstringLength = min(remainingMessageLength, currentEncoding.maximumCharacters)
         val header = UserDataHeader()
 
@@ -141,7 +142,7 @@ class CommandGeneratorAdapter : CommandGeneratorPort {
     return SimModemCommandChain(CommandChainType.CUSTOM_COMMAND, listOf(command), resultHandler)
   }
 
-  private fun getNumberOfTakenUpCharacters(header: UserDataHeader, alphabet: PduAlphabet): Int {
+  private fun getNumberOfTakenUpCharacters(header: UserDataHeader, alphabet: PDUAlphabet): Int {
     if (header.elements.isEmpty())
       return 0
 
@@ -171,7 +172,7 @@ class CommandGeneratorAdapter : CommandGeneratorPort {
     )
   }
 
-  private fun tryEncodeMessage(message: String, alphabet: PduAlphabet): MessageEncodingResult? {
+  private fun tryEncodeMessage(message: String, alphabet: PDUAlphabet): MessageEncodingResult? {
     return try {
       return MessageEncodingResult(alphabet.textCoder.encode(message), message.length, alphabet)
     } catch (exception: IllegalCharacterException) {

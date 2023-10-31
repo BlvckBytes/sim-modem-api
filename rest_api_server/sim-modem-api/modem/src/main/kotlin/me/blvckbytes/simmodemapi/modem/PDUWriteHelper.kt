@@ -1,9 +1,12 @@
 package me.blvckbytes.simmodemapi.modem
 
 import me.blvckbytes.simmodemapi.domain.*
-import me.blvckbytes.simmodemapi.domain.header.ConcatenatedShortMessage
-import me.blvckbytes.simmodemapi.domain.header.InformationElementIdentifier
-import me.blvckbytes.simmodemapi.domain.header.UserDataHeader
+import me.blvckbytes.simmodemapi.domain.pdu.PDU
+import me.blvckbytes.simmodemapi.domain.pdu.PDUAlphabet
+import me.blvckbytes.simmodemapi.domain.pdu.PhoneNumber
+import me.blvckbytes.simmodemapi.domain.pdu.header.ConcatenatedShortMessage
+import me.blvckbytes.simmodemapi.domain.pdu.header.InformationElementIdentifier
+import me.blvckbytes.simmodemapi.domain.pdu.header.UserDataHeader
 
 object PDUWriteHelper {
 
@@ -204,11 +207,11 @@ object PDUWriteHelper {
 
     var messageBytes = encodingResult.bytes
 
-    if (encodingResult.alphabet == PduAlphabet.GSM_SEVEN_BIT)
+    if (encodingResult.alphabet == PDUAlphabet.GSM_SEVEN_BIT)
       messageBytes = packSevenBitCharacters(encodingResult.bytes, udhLength)
 
     else if (
-      encodingResult.alphabet == PduAlphabet.UCS2_SIXTEEN_BIT &&
+      encodingResult.alphabet == PDUAlphabet.UCS2_SIXTEEN_BIT &&
       udhLength != 0 && udhLength % 2 != 0
     ) {
       // The header is not a multiple of two bytes long, add one byte of padding to the message
@@ -218,14 +221,14 @@ object PDUWriteHelper {
     }
 
     output.add(previousLength, when (encodingResult.alphabet) {
-      PduAlphabet.GSM_SEVEN_BIT -> {
+      PDUAlphabet.GSM_SEVEN_BIT -> {
         val numberOfHeaderSeptets = if (udhLength == 0) 0 else (udhLength * 8 + (7 - 1)) / 7
         val numberOfMessageSeptets = encodingResult.numberOfCharacters
         numberOfHeaderSeptets + numberOfMessageSeptets
       }
 
-      PduAlphabet.EIGHT_BIT -> udhLength + encodingResult.numberOfCharacters
-      PduAlphabet.UCS2_SIXTEEN_BIT -> udhLength + encodingResult.bytes.size
+      PDUAlphabet.EIGHT_BIT -> udhLength + encodingResult.numberOfCharacters
+      PDUAlphabet.UCS2_SIXTEEN_BIT -> udhLength + encodingResult.bytes.size
       else -> throw IllegalStateException("Unsupported alphabet encountered: ${encodingResult.alphabet}")
     }.toByte())
 

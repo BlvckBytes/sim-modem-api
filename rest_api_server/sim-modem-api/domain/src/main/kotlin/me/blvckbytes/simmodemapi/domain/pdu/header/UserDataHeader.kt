@@ -1,4 +1,4 @@
-package me.blvckbytes.simmodemapi.domain.header
+package me.blvckbytes.simmodemapi.domain.pdu.header
 
 import kotlin.reflect.cast
 

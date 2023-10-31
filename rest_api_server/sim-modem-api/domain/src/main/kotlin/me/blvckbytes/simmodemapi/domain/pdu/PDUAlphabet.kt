@@ -1,11 +1,11 @@
-package me.blvckbytes.simmodemapi.domain
+package me.blvckbytes.simmodemapi.domain.pdu
 
 import me.blvckbytes.simmodemapi.domain.textcoder.EightBitTextCoder
 import me.blvckbytes.simmodemapi.domain.textcoder.GSMTextCoder
 import me.blvckbytes.simmodemapi.domain.textcoder.TextCoder
 import me.blvckbytes.simmodemapi.domain.textcoder.UCS2TextCoder
 
-enum class PduAlphabet(
+enum class PDUAlphabet(
   val textCoder: TextCoder,
   val dcsFlag: BinaryDCSFlag,
   val maximumCharacters: Int,

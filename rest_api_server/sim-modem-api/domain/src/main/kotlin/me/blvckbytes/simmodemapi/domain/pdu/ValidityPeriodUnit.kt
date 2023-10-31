@@ -1,4 +1,4 @@
-package me.blvckbytes.simmodemapi.domain
+package me.blvckbytes.simmodemapi.domain.pdu
 
 enum class ValidityPeriodUnit(
   val min: Double,

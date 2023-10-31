@@ -1,4 +1,6 @@
-package me.blvckbytes.simmodemapi.domain
+package me.blvckbytes.simmodemapi.domain.pdu
+
+import me.blvckbytes.simmodemapi.domain.BinaryUtils
 
 enum class ValidityPeriodFormat(
   private val value: Int

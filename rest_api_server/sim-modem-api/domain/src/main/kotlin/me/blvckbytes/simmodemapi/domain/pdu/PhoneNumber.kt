@@ -1,4 +1,4 @@
-package me.blvckbytes.simmodemapi.domain
+package me.blvckbytes.simmodemapi.domain.pdu
 
 import java.util.EnumSet
 

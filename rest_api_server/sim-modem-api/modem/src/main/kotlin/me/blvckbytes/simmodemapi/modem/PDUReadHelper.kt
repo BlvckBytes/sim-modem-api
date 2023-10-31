@@ -3,9 +3,10 @@ package me.blvckbytes.simmodemapi.modem
 import me.blvckbytes.simmodemapi.domain.*
 import me.blvckbytes.simmodemapi.domain.exception.InvalidPduException
 import me.blvckbytes.simmodemapi.domain.exception.PduInvalidityReason
-import me.blvckbytes.simmodemapi.domain.header.ConcatenatedShortMessage
-import me.blvckbytes.simmodemapi.domain.header.InformationElementIdentifier
-import me.blvckbytes.simmodemapi.domain.header.UserDataHeader
+import me.blvckbytes.simmodemapi.domain.pdu.*
+import me.blvckbytes.simmodemapi.domain.pdu.header.ConcatenatedShortMessage
+import me.blvckbytes.simmodemapi.domain.pdu.header.InformationElementIdentifier
+import me.blvckbytes.simmodemapi.domain.pdu.header.UserDataHeader
 import me.blvckbytes.simmodemapi.domain.textcoder.GSMTextCoder
 import me.blvckbytes.simmodemapi.domain.textcoder.UCS2TextCoder
 import java.util.EnumSet
@@ -80,11 +81,11 @@ object PDUReadHelper {
   ): Pair<UserDataHeader?, String> {
     val alphabet = (
       if (dcsFlags.contains(BinaryDCSFlag.SEVEN_BIT_GSM_ALPHABET))
-        PduAlphabet.GSM_SEVEN_BIT
+        PDUAlphabet.GSM_SEVEN_BIT
       else if (dcsFlags.contains(BinaryDCSFlag.EIGHT_BIT_ALPHABET))
-        PduAlphabet.EIGHT_BIT
+        PDUAlphabet.EIGHT_BIT
       else if (dcsFlags.contains(BinaryDCSFlag.SIXTEEN_BIT_UCS2_ALPHABET))
-        PduAlphabet.UCS2_SIXTEEN_BIT
+        PDUAlphabet.UCS2_SIXTEEN_BIT
       else
         throw InvalidPduException(PduInvalidityReason.INVALID_ALPHABET)
     )
@@ -134,7 +135,7 @@ object PDUReadHelper {
       totalHeaderLengthInBits = (headerLengthInBytes + 1) * 8
     }
 
-    if (alphabet == PduAlphabet.GSM_SEVEN_BIT) {
+    if (alphabet == PDUAlphabet.GSM_SEVEN_BIT) {
       // 1 unit = 1 character (seven bit)
       messageLengthInUnits -= (totalHeaderLengthInBits + (7 - 1)) / 7
 
@@ -167,7 +168,7 @@ object PDUReadHelper {
       )
     }
 
-    if (alphabet == PduAlphabet.UCS2_SIXTEEN_BIT) {
+    if (alphabet == PDUAlphabet.UCS2_SIXTEEN_BIT) {
       // 1 unit = 1 byte
       messageLengthInUnits -= totalHeaderLengthInBits / 8
 

@@ -1,8 +1,9 @@
 package me.blvckbytes.simmodemapi.modem
 
 import me.blvckbytes.simmodemapi.domain.*
-import me.blvckbytes.simmodemapi.domain.header.ConcatenatedShortMessage
-import me.blvckbytes.simmodemapi.domain.header.UserDataHeader
+import me.blvckbytes.simmodemapi.domain.pdu.*
+import me.blvckbytes.simmodemapi.domain.pdu.header.ConcatenatedShortMessage
+import me.blvckbytes.simmodemapi.domain.pdu.header.UserDataHeader
 import org.junit.jupiter.api.Test
 import java.util.*
 

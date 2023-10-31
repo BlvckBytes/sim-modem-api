@@ -3,7 +3,7 @@ package me.blvckbytes.simmodemapi.rest.dto
 import jakarta.validation.constraints.NotEmpty
 import jakarta.validation.constraints.Pattern
 import jakarta.validation.constraints.Size
-import me.blvckbytes.simmodemapi.domain.ValidityPeriodUnit
+import me.blvckbytes.simmodemapi.domain.pdu.ValidityPeriodUnit
 
 @ValidValidityPeriod
 class SendSmsRequestDto(

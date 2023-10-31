@@ -1,6 +1,6 @@
-package me.blvckbytes.simmodemapi.domain
+package me.blvckbytes.simmodemapi.domain.pdu
 
-import me.blvckbytes.simmodemapi.domain.header.UserDataHeader
+import me.blvckbytes.simmodemapi.domain.pdu.header.UserDataHeader
 import java.util.EnumSet
 
 class PDU(
