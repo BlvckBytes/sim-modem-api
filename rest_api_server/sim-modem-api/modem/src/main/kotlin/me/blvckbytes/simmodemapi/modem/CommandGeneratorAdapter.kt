@@ -7,9 +7,9 @@ import me.blvckbytes.simmodemapi.domain.header.ConcatenatedShortMessage
 import me.blvckbytes.simmodemapi.domain.header.InformationElementIdentifier
 import me.blvckbytes.simmodemapi.domain.header.UserDataHeader
 import me.blvckbytes.simmodemapi.domain.port.CommandGeneratorPort
-import me.blvckbytes.simmodemapi.modem.coder.ASCIITextCoder
-import me.blvckbytes.simmodemapi.modem.coder.GSMTextCoder
-import me.blvckbytes.simmodemapi.modem.coder.UCS2TextCoder
+import me.blvckbytes.simmodemapi.domain.textcoder.ASCIITextCoder
+import me.blvckbytes.simmodemapi.domain.textcoder.GSMTextCoder
+import me.blvckbytes.simmodemapi.domain.textcoder.UCS2TextCoder
 import org.springframework.stereotype.Component
 import java.util.*
 import kotlin.math.min

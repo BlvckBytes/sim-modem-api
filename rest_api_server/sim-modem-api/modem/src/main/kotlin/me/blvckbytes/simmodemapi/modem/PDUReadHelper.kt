@@ -6,8 +6,8 @@ import me.blvckbytes.simmodemapi.domain.exception.PduInvalidityReason
 import me.blvckbytes.simmodemapi.domain.header.ConcatenatedShortMessage
 import me.blvckbytes.simmodemapi.domain.header.InformationElementIdentifier
 import me.blvckbytes.simmodemapi.domain.header.UserDataHeader
-import me.blvckbytes.simmodemapi.modem.coder.GSMTextCoder
-import me.blvckbytes.simmodemapi.modem.coder.UCS2TextCoder
+import me.blvckbytes.simmodemapi.domain.textcoder.GSMTextCoder
+import me.blvckbytes.simmodemapi.domain.textcoder.UCS2TextCoder
 import java.util.EnumSet
 
 object PDUReadHelper {

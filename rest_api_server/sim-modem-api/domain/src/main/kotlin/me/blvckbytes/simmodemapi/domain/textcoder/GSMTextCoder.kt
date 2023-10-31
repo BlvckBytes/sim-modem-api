@@ -1,10 +1,10 @@
-package me.blvckbytes.simmodemapi.modem.coder
+package me.blvckbytes.simmodemapi.domain.textcoder
 
 import me.blvckbytes.simmodemapi.domain.exception.IllegalCharacterException
 
-object GSMTextCoder {
+object GSMTextCoder : TextCoder {
 
-  fun encode(value: String): ByteArray {
+  override fun encode(value: String): ByteArray {
     // Worst case: Each character needs two bytes for encoding
     val result = ByteArray(value.length * 2)
     var resultPointer = 0
@@ -162,7 +162,7 @@ object GSMTextCoder {
     return result.sliceArray(0 until resultPointer)
   }
 
-  fun decode(value: ByteArray): String? {
+  override fun decode(value: ByteArray): String? {
     var i = 0
 
     val result = StringBuilder()

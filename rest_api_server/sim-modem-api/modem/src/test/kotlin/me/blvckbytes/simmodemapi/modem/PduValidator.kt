@@ -3,8 +3,8 @@ package me.blvckbytes.simmodemapi.modem
 import me.blvckbytes.simmodemapi.domain.*
 import me.blvckbytes.simmodemapi.domain.exception.IllegalCharacterException
 import me.blvckbytes.simmodemapi.domain.header.InformationElement
-import me.blvckbytes.simmodemapi.modem.coder.GSMTextCoder
-import me.blvckbytes.simmodemapi.modem.coder.UCS2TextCoder
+import me.blvckbytes.simmodemapi.domain.textcoder.GSMTextCoder
+import me.blvckbytes.simmodemapi.domain.textcoder.UCS2TextCoder
 import org.junit.jupiter.api.AssertionFailureBuilder
 import org.junit.jupiter.api.Assertions.*
 

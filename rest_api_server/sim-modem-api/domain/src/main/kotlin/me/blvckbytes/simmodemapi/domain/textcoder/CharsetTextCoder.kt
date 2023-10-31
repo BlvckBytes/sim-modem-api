@@ -1,25 +1,28 @@
-package me.blvckbytes.simmodemapi.modem.coder
+package me.blvckbytes.simmodemapi.domain.textcoder
 
 import me.blvckbytes.simmodemapi.domain.exception.IllegalCharacterException
 import java.nio.ByteBuffer
 import java.nio.CharBuffer
+import java.nio.charset.Charset
 import java.nio.charset.CodingErrorAction
 import java.nio.charset.MalformedInputException
 import java.nio.charset.UnmappableCharacterException
 
-object UCS2TextCoder {
+open class CharsetTextCoder(
+  charset: Charset
+) : TextCoder {
 
-  private val encoder = Charsets.UTF_16BE
+  private val encoder = charset
     .newEncoder()
     .onMalformedInput(CodingErrorAction.REPORT)
     .onUnmappableCharacter(CodingErrorAction.REPORT)
 
-  private val decoder = Charsets.UTF_16BE
+  private val decoder = charset
     .newDecoder()
     .onMalformedInput(CodingErrorAction.REPORT)
     .onUnmappableCharacter(CodingErrorAction.REPORT)
 
-  fun encode(value: String): ByteArray {
+  override fun encode(value: String): ByteArray {
     try {
       val result = encoder.encode(CharBuffer.wrap(value))
       val byteArray = ByteArray(result.capacity())
@@ -33,7 +36,7 @@ object UCS2TextCoder {
     }
   }
 
-  fun decode(value: ByteArray): String? {
+  override fun decode(value: ByteArray): String? {
     return try {
       val result = decoder.decode(ByteBuffer.wrap(value))
       result.toString()
