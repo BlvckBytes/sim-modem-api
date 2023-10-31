@@ -28,6 +28,18 @@ class ConcatenatedShortMessage(
     return other.sequenceNumberOfThisPart == this.sequenceNumberOfThisPart
   }
 
+  override fun getLengthInBytes(): Int {
+    return 5
+  }
+
+  override fun write(output: MutableList<Byte>) {
+    output.add(InformationElementIdentifier.CONCATENATED_SHORT_MESSAGE.identifier.toByte())
+    output.add(3)
+    output.add((messageReferenceNumber ?: 0).toByte())
+    output.add(totalNumberOfParts.toByte())
+    output.add(sequenceNumberOfThisPart.toByte())
+  }
+
   override fun toString(): String {
     return "ConcatenatedShortMessage(messageReferenceNumber=$messageReferenceNumber, totalNumberOfParts=$totalNumberOfParts, sequenceNumberOfThisPart=$sequenceNumberOfThisPart)"
   }

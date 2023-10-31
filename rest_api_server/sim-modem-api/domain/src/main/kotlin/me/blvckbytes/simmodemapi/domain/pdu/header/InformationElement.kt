@@ -6,4 +6,8 @@ interface InformationElement {
 
   fun isContentEqualTo(other: InformationElement): Boolean
 
+  fun getLengthInBytes(): Int
+
+  fun write(output: MutableList<Byte>)
+
 }

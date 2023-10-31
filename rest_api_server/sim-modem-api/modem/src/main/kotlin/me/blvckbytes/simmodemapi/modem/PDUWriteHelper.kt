@@ -1,11 +1,9 @@
 package me.blvckbytes.simmodemapi.modem
 
-import me.blvckbytes.simmodemapi.domain.*
+import me.blvckbytes.simmodemapi.domain.BinaryUtils
 import me.blvckbytes.simmodemapi.domain.pdu.PDU
 import me.blvckbytes.simmodemapi.domain.pdu.PDUAlphabet
 import me.blvckbytes.simmodemapi.domain.pdu.PhoneNumber
-import me.blvckbytes.simmodemapi.domain.pdu.header.ConcatenatedShortMessage
-import me.blvckbytes.simmodemapi.domain.pdu.header.InformationElementIdentifier
 import me.blvckbytes.simmodemapi.domain.pdu.header.UserDataHeader
 
 object PDUWriteHelper {
@@ -153,20 +151,8 @@ object PDUWriteHelper {
 
     val previousLength = output.size
 
-    for (element in elements) {
-      when (element) {
-        is ConcatenatedShortMessage -> {
-          // TODO: Actually... maybe this should live in the domain? It's kind of domain knowledge...
-          output.add(InformationElementIdentifier.CONCATENATED_SHORT_MESSAGE.identifier.toByte())
-          output.add(3)
-          output.add((element.messageReferenceNumber ?: 0).toByte())
-          output.add(element.totalNumberOfParts.toByte())
-          output.add(element.sequenceNumberOfThisPart.toByte())
-        }
-
-        else -> throw IllegalStateException("Unimplemented element ${element.getType().identifier}")
-      }
-    }
+    for (element in elements)
+      element.write(output)
 
     output.add(previousLength, (output.size - previousLength).toByte())
 

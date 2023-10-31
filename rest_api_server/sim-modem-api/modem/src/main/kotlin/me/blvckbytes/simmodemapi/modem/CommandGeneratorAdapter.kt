@@ -146,15 +146,8 @@ class CommandGeneratorAdapter : CommandGeneratorPort {
     if (header.elements.isEmpty())
       return 0
 
-    // Length indicator byte
-    var byteLength = 1
-
-    for (element in header.elements) {
-      byteLength += when (element) {
-        is ConcatenatedShortMessage -> 5
-        else -> throw IllegalStateException("Unimplemented element ${element.getType().identifier}")
-      }
-    }
+    // Start with one, because of the length indicator byte
+    val byteLength = header.elements.fold(1) { accumulator, current -> accumulator + current.getLengthInBytes() }
 
     return (byteLength * 8 + (alphabet.numberOfBits - 1)) / alphabet.numberOfBits
   }
