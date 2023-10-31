@@ -56,8 +56,11 @@ class PduValidator(direction: PDUDirection, text: String) {
     return this
   }
 
-  fun assertProtocolIdentifier(protocolIdentifier: Int): PduValidator {
-    assertEquals(protocolIdentifier, pdu.protocolIdentifier)
+  fun assertProtocolIdentifierFlagsExact(vararg flags: BinaryProtocolIdentifierFlag): PduValidator {
+    ensureContainsExact(
+      flags.size, flags::iterator,
+      pdu.protocolIdentifierFlags.size, pdu.protocolIdentifierFlags::iterator
+    ) { a, b -> a == b }
     return this
   }
 

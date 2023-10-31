@@ -28,7 +28,7 @@ class PDUReadHelperTests {
         "85291234567",
         BinaryTypeOfAddressFlag.TYPE_INTERNATIONAL, BinaryTypeOfAddressFlag.NUMBERING_PLAN_ISDN
       )
-      .assertProtocolIdentifier(0x00)
+      .assertProtocolIdentifierFlagsExact(BinaryProtocolIdentifierFlag.MS_TO_SC_SHORT_MESSAGE)
       .assertValidityPeriodFormatPresent(ValidityPeriodFormat.NOT_PRESENT)
       .assertMessageFlagsExact()
       .assertDCSFlagsExact(BinaryDCSFlag.SEVEN_BIT_GSM_ALPHABET)
@@ -56,7 +56,7 @@ class PDUReadHelperTests {
         "85291234567",
         BinaryTypeOfAddressFlag.TYPE_INTERNATIONAL, BinaryTypeOfAddressFlag.NUMBERING_PLAN_ISDN
       )
-      .assertProtocolIdentifier(0x00)
+      .assertProtocolIdentifierFlagsExact(BinaryProtocolIdentifierFlag.MS_TO_SC_SHORT_MESSAGE)
       .assertValidityPeriodFormatPresent(ValidityPeriodFormat.NOT_PRESENT)
       .assertMessageFlagsExact()
       .assertDCSFlagsExact(BinaryDCSFlag.SEVEN_BIT_GSM_ALPHABET)
@@ -104,7 +104,7 @@ class PDUReadHelperTests {
           "4312345678901",
           BinaryTypeOfAddressFlag.TYPE_INTERNATIONAL, BinaryTypeOfAddressFlag.NUMBERING_PLAN_ISDN
         )
-        .assertProtocolIdentifier(0x00)
+        .assertProtocolIdentifierFlagsExact(BinaryProtocolIdentifierFlag.MS_TO_SC_SHORT_MESSAGE)
         .assertDCSFlagsExact(BinaryDCSFlag.SEVEN_BIT_GSM_ALPHABET, BinaryDCSFlag.MESSAGE_CLASS_1)
         .assertValidityPeriodFormatPresent(ValidityPeriodFormat.RELATIVE_INTEGER)
         .assertValidityPeriod(ValidityPeriodUnit.MINUTES, 5.0)

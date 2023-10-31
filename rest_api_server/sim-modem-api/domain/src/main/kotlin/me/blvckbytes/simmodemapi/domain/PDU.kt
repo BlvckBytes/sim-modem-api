@@ -8,7 +8,7 @@ class PDU(
   val messageFlags: MessageFlags,
   val messageReferenceNumber: Int?,
   val destination: PhoneNumber,
-  val protocolIdentifier: Int,
+  val protocolIdentifierFlags: EnumSet<BinaryProtocolIdentifierFlag>,
   val dcsFlags: EnumSet<BinaryDCSFlag>,
   val validityPeriodUnit: ValidityPeriodUnit?,
   val validityPeriodValue: Double,

@@ -237,10 +237,8 @@ object PDUReadHelper {
     return result.toByteArray()
   }
 
-  private fun parseProtocolIdentifier(reader: ByteArrayReader): Int {
-    // Note that for the straightforward case of simple MS-to-SC short message transfer the Protocol
-    // Identifier is set to the value 0.
-    return reader.readInt()
+  private fun parseProtocolIdentifier(reader: ByteArrayReader): EnumSet<BinaryProtocolIdentifierFlag> {
+    return BinaryProtocolIdentifierFlag.fromProtocolIdentifierValue(reader.readInt())
   }
 
   private fun parseDestination(reader: ByteArrayReader): PhoneNumber {
