@@ -5,6 +5,7 @@ import me.blvckbytes.simmodemapi.domain.SimModemCommand
 import me.blvckbytes.simmodemapi.domain.SimModemCommandChain
 import me.blvckbytes.simmodemapi.domain.SimModemResponse
 import me.blvckbytes.simmodemapi.domain.port.SimModemSocketPort
+import me.blvckbytes.simmodemapi.domain.textcoder.ASCIITextCoder
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
@@ -38,7 +39,7 @@ class SimModemSocketAdapter(
   private var lastHeartbeatSend: Long = 0
   private val commandQueue = ConcurrentLinkedQueue<SimModemCommandChain>()
   private val logger = LoggerFactory.getLogger(SimModemSocketAdapter::class.java)
-
+  private val readBuffer = ByteArray(READ_BUFFER_SIZE)
   private var commandTypeHistory = CommandTypeHistory(COMMAND_HISTORY_SIZE)
 
   init {
@@ -78,6 +79,7 @@ class SimModemSocketAdapter(
         val nextChain = commandQueue.poll()
 
         if (nextChain == null) {
+          ensureAvailabilityAndExecute({}, this::handleModemMessages)
           Thread.sleep(QUEUE_PEEK_DELAY_MS)
           continue
         }
@@ -157,58 +159,84 @@ class SimModemSocketAdapter(
     }
   }
 
+  private fun tryReadSocketInputStream(socket: Socket, timeout: Int): Pair<ByteArray, String>? {
+    socket.soTimeout = timeout
+
+    try {
+      val inputStream = socket.getInputStream()
+
+      var responseBufferSlice: ByteArray? = null
+      var responseContent: String? = null
+
+      // Some commands produce leading \r\n sequences which are sent apart from the
+      // actual response and thus cause a separate read() trigger. These sequences have
+      // no value and need to be discarded, to get to the data of interest.
+      while (responseContent == null || responseContent == "\r\n") {
+        val amountRead = inputStream.read(readBuffer)
+
+        if (amountRead < 0)
+          return null
+
+        responseBufferSlice = readBuffer.sliceArray(0 until amountRead)
+        responseContent = responseBufferSlice.decodeToString()
+      }
+
+      return Pair(responseBufferSlice!!, responseContent)
+    } catch (exception: SocketTimeoutException) {
+      return null
+    }
+  }
+
+  private fun handleModemMessages(socket: Socket) {
+    val (_, responseString) = tryReadSocketInputStream(socket, 1) ?: return
+    val trimmedResponseString = ASCIITextCoder.trimControlCharacters(responseString)
+    val firstColonIndex = trimmedResponseString.indexOf(':')
+
+    if (firstColonIndex < 0) {
+      logger.info("Discarding unknown modem message: $trimmedResponseString")
+      return
+    }
+
+    val responseCommandPrefix = trimmedResponseString.substring(0, firstColonIndex)
+
+    if (responseCommandPrefix == "+CMT") {
+      // TODO: Actually handle the message
+      logger.info("Received modem message '+CMT': $trimmedResponseString")
+      return
+    }
+
+    logger.info("Discarding modem message with no handler: $trimmedResponseString")
+  }
+
   private fun executeCommand(command: SimModemCommand): Pair<ExecutionResult, SimModemResponse?> {
     return ensureAvailabilityAndExecute({ Pair(ExecutionResult.UNAVAILABLE, null) }) { availableSocket ->
       val outputStream = availableSocket.getOutputStream()
-      val inputStream = availableSocket.getInputStream()
 
-      // There could be remainders of previous responses still in the input buffer.
-      // Also, sometimes, the modem seems to make requests on its own, which cause
-      // responses that haven't even been requested by this process.
-      try {
-        availableSocket.soTimeout = 1
-        while (inputStream.read() > 0)
-          continue
-      } catch (ignored: SocketTimeoutException) {}
-
-      availableSocket.soTimeout = command.customTimeoutMs ?: command.type.timeoutMs
+      handleModemMessages(availableSocket)
 
       outputStream.write(command.binaryCommand)
       outputStream.flush()
 
       val commandSentStamp = LocalDateTime.now()
+      val responseTimeout = command.customTimeoutMs ?: command.type.timeoutMs
 
-      try {
-        val buffer = ByteArray(READ_BUFFER_SIZE)
-        var amountRead = inputStream.read(buffer)
-        var responseReceivedStamp = LocalDateTime.now()
+      val (responseBytes, responseString) = tryReadSocketInputStream(availableSocket, responseTimeout)
+        ?: return@ensureAvailabilityAndExecute Pair(ExecutionResult.TIMED_OUT, null)
 
-        val responseBufferSlice = buffer.sliceArray(0 until amountRead)
-        var responseContent = responseBufferSlice.decodeToString()
+      val responseReceivedStamp = LocalDateTime.now()
 
-        // Man, what a HACK
-        while (responseContent == "\r\n") {
-          amountRead = inputStream.read(buffer)
-          responseReceivedStamp = LocalDateTime.now()
-          responseContent = buffer.decodeToString(0, amountRead)
-        }
+      val response = SimModemResponse(
+        responseBytes,
+        ASCIITextCoder.substituteUnprintableAscii(responseString),
+        command,
+        commandSentStamp,
+        responseReceivedStamp
+      )
 
-        val response = SimModemResponse(
-          responseBufferSlice,
-          CommandGeneratorAdapter.substituteUnprintableAscii(responseContent),
-          command,
-          commandSentStamp,
-          responseReceivedStamp
-        )
+      if (command.responsePredicate?.apply(responseString) == false)
+        return@ensureAvailabilityAndExecute Pair(ExecutionResult.PREDICATE_MISMATCH, response)
 
-        if (command.responsePredicate?.apply(responseContent) == false)
-          return@ensureAvailabilityAndExecute Pair(ExecutionResult.PREDICATE_MISMATCH, response)
-
-        return@ensureAvailabilityAndExecute Pair(ExecutionResult.SUCCESS, response)
-
-      } catch (exception: SocketTimeoutException) {
-        return@ensureAvailabilityAndExecute Pair(ExecutionResult.TIMED_OUT, null)
-      }
+      return@ensureAvailabilityAndExecute Pair(ExecutionResult.SUCCESS, response)
     }
   }
 }
