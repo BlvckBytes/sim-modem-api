@@ -1,5 +1,6 @@
 #!/bin/bash
 cd sim-modem-api
+./gradlew clean
 ./gradlew bootJar
-cp build/libs/*.jar ../server.jar
+cp app/build/libs/*.jar ../server.jar
 cd ..
