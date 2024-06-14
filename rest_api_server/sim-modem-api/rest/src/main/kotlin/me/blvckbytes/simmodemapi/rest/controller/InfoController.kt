@@ -18,6 +18,11 @@ class InfoController(
     return simModemService.getSignalQuality()
   }
 
+  @GetMapping("/subscriber-number")
+  fun getSubscriberNumber(): DeferredResult<ExecutionResponseDto> {
+    return simModemService.getSubscriberNumber()
+  }
+
   @GetMapping("/selected-character-set")
   fun getCharacterSet(): DeferredResult<ExecutionResponseDto> {
     return simModemService.getSelectedCharacterSet()

@@ -96,6 +96,12 @@ class CommandGeneratorAdapter(
     ), resultHandler)
   }
 
+  override fun forSubscriberNumber(resultHandler: SimModemResultHandler): SimModemCommandChain {
+    return SimModemCommandChain(listOf(
+      makeCommand(SimModemCommandType.SUBSCRIBER_NUMBER, PREDICATE_ENDS_IN_OK, "AT+CNUM\r\n")
+    ), resultHandler)
+  }
+
   override fun forSelectedCharacterSet(resultHandler: SimModemResultHandler): SimModemCommandChain {
     return SimModemCommandChain(listOf(
       makeCommand(SimModemCommandType.SELECTED_CHARACTER_SET, PREDICATE_ENDS_IN_OK, "AT+CSCS?\r\n")

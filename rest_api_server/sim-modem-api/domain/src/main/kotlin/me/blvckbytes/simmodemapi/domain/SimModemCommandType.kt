@@ -8,6 +8,7 @@ enum class SimModemCommandType(
   // SMS messages seem to get stuck for a long time when sent in bursts
   SEND_SMS_BODY(10_000, { if (it == SEND_SMS_BODY) 3500 else 0 }),
   SIGNAL_QUALITY(null, null),
+  SUBSCRIBER_NUMBER(null, null),
   SELECTED_CHARACTER_SET(null, null),
   SELECTABLE_CHARACTER_SETS(null, null),
   SET_TEXT_MODE(null, null),

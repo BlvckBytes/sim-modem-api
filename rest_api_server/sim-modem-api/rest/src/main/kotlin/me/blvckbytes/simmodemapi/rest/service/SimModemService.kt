@@ -33,6 +33,10 @@ class SimModemService(
     return queueChain { commandGenerator.forSignalQuality(it) }
   }
 
+  fun getSubscriberNumber(): DeferredResult<ExecutionResponseDto> {
+    return queueChain { commandGenerator.forSubscriberNumber(it) }
+  }
+
   fun getSelectedCharacterSet(): DeferredResult<ExecutionResponseDto> {
     return queueChain { commandGenerator.forSelectedCharacterSet(it) }
   }

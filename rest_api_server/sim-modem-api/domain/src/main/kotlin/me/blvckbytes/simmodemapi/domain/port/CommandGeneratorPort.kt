@@ -17,6 +17,8 @@ interface CommandGeneratorPort {
 
   fun forSignalQuality(resultHandler: SimModemResultHandler): SimModemCommandChain
 
+  fun forSubscriberNumber(resultHandler: SimModemResultHandler): SimModemCommandChain
+
   fun forSelectedCharacterSet(resultHandler: SimModemResultHandler): SimModemCommandChain
 
   fun forSelectableCharacterSets(resultHandler: SimModemResultHandler): SimModemCommandChain
