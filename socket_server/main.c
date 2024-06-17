@@ -371,6 +371,11 @@ void open_serial_device()
 {
   serial_port_fd = open(SERIAL_DEVICE_PATH, O_RDWR);
 
+  if (serial_port_fd < 0) {
+    log_prefixed_printf("Error %i from open: %s\n", errno, strerror(errno));
+    exit(EXIT_FAILURE);
+  }
+
   struct termios tty;
 
   if(tcgetattr(serial_port_fd, &tty) != 0) {
